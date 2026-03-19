@@ -1,0 +1,7 @@
+dist/
+node_modules/
+main.wasm
+main.wasm.gz
+vendor/ig-desktop/dist-lib/
+vendor/ig-desktop/metadata.json
+.ig-frontend-lib.tar.gz

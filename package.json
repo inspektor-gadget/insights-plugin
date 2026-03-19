@@ -1,0 +1,45 @@
+{
+  "name": "insights-plugin",
+  "version": "0.1.0",
+  "description": "Insights plugin for Headlamp",
+  "igDesktop": {
+    "frontendLibVersion": "v0.4.0"
+  },
+  "headlamp": {
+    "extraDist": {
+      "main.wasm.gz": "main.wasm.gz"
+    }
+  },
+  "scripts": {
+    "start": "headlamp-plugin start",
+    "prebuild": "node scripts/fetch-vendor-lib.mjs",
+    "build": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz",
+    "build:go-wasm": "cd wasm && GOOS=js GOARCH=wasm go build -o ../main.wasm . && gzip -f ../main.wasm",
+    "build:wasm": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz",
+    "generate-manifests": "node scripts/generate-manifests.mjs",
+    "test": "headlamp-plugin test",
+    "format": "headlamp-plugin format",
+    "lint": "headlamp-plugin lint",
+    "tsc": "headlamp-plugin tsc",
+    "package": "headlamp-plugin package",
+    "vendor:update": "bash scripts/update-ig-vendor.sh"
+  },
+  "prettier": "@headlamp-k8s/eslint-config/prettier-config",
+  "eslintConfig": {
+    "extends": [
+      "@headlamp-k8s",
+      "prettier"
+    ]
+  },
+  "devDependencies": {
+    "@kinvolk/headlamp-plugin": "^0.13.0"
+  },
+  "dependencies": {
+    "@inspektor-gadget/ig-desktop": "file:vendor/ig-desktop",
+    "svelte": "5.53.5",
+    "yaml": "^2.6.0"
+  },
+  "overrides": {
+    "typescript": "5.6.2"
+  }
+}

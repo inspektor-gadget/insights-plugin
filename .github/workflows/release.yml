@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  NODE_VERSION: "20"
+  GO_VERSION: "1.25.*"
+  PLUGIN_NAME: "insights-plugin"
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Setup Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Update package.json version
+        run: npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Create release archive
+        run: |
+          mkdir -p ${{ env.PLUGIN_NAME }}
+          cp package.json ${{ env.PLUGIN_NAME }}/
+          cp dist/main.js ${{ env.PLUGIN_NAME }}/
+          cp dist/main.wasm.gz ${{ env.PLUGIN_NAME }}/
+          tar -czf ${{ env.PLUGIN_NAME }}-${{ inputs.version }}.tar.gz ${{ env.PLUGIN_NAME }}/
+          rm -rf ${{ env.PLUGIN_NAME }}
+
+      - name: Calculate checksum
+        id: checksum
+        run: |
+          CHECKSUM=$(sha256sum ${{ env.PLUGIN_NAME }}-${{ inputs.version }}.tar.gz | awk '{print $1}')
+          echo "sha256=${CHECKSUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Update artifacthub-pkg.yml
+        run: |
+          sed -i "s/^version:.*/version: \"${{ inputs.version }}\"/" artifacthub-pkg.yml
+          sed -i "s/^createdAt:.*/createdAt: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"/" artifacthub-pkg.yml
+          sed -i "s|headlamp/plugin/archive-url:.*|headlamp/plugin/archive-url: \"https://github.com/inspektor-gadget/insights-plugin/releases/download/v${{ inputs.version }}/${{ env.PLUGIN_NAME }}-${{ inputs.version }}.tar.gz\"|" artifacthub-pkg.yml
+          sed -i "s|headlamp/plugin/archive-checksum:.*|headlamp/plugin/archive-checksum: \"SHA256:${{ steps.checksum.outputs.sha256 }}\"|" artifacthub-pkg.yml
+
+      - name: Commit version and metadata updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json artifacthub-pkg.yml
+          git commit -m "Release v${{ inputs.version }}"
+          git push
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --prerelease \
+            --generate-notes \
+            ${{ env.PLUGIN_NAME }}-${{ inputs.version }}.tar.gz
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push container image
+        run: |
+          mkdir -p ${{ env.PLUGIN_NAME }}
+          cp package.json ${{ env.PLUGIN_NAME }}/
+          cp dist/main.js ${{ env.PLUGIN_NAME }}/
+          cp dist/main.wasm.gz ${{ env.PLUGIN_NAME }}/
+          docker build -f Dockerfile.ci -t ghcr.io/${{ github.repository }}:v${{ inputs.version }} .
+          docker push ghcr.io/${{ github.repository }}:v${{ inputs.version }}
+          rm -rf ${{ env.PLUGIN_NAME }}

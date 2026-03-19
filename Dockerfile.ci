@@ -1,0 +1,3 @@
+FROM busybox:latest
+COPY insights-plugin /plugins/insights-plugin
+USER 1001
