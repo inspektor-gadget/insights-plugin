@@ -1,12 +1,10 @@
+// IG Desktop frontend styles (injected into JS by headlamp-plugin base Vite config)
+import '@inspektor-gadget/ig-desktop/frontend/dist-lib/ig-frontend.css';
 import {
   registerProjectDetailsTab,
   registerRoute,
   registerSidebarEntry,
 } from '@kinvolk/headlamp-plugin/lib';
-
-// IG Desktop frontend styles (injected into JS by headlamp-plugin base Vite config)
-import '@inspektor-gadget/ig-desktop/frontend/dist-lib/ig-frontend.css';
-
 import GadgetRunnerPage from './components/GadgetRunnerPage';
 import GadgetViewPage from './components/GadgetViewPage';
 import InsightsTab from './components/projects/InsightsTab';

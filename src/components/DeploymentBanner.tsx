@@ -1,15 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Collapse,
-  Typography,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
 import type { IGDeploymentStatus } from '@inspektor-gadget/ig-desktop/frontend';
+import { Alert, Box, Button, CircularProgress, IconButton, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
 import { checkDeploymentStatus } from '../utils/api-request';
 import DeployModal from './DeployModal';
 
@@ -85,12 +77,7 @@ export default function DeploymentBanner({ clusterName }: { clusterName: string 
       <Alert
         severity={status.deployed ? 'success' : 'warning'}
         sx={{ mb: 2 }}
-        icon={
-          <Icon
-            icon={status.deployed ? 'mdi:check-circle' : 'mdi:alert'}
-            width={22}
-          />
-        }
+        icon={<Icon icon={status.deployed ? 'mdi:check-circle' : 'mdi:alert'} width={22} />}
         action={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {!status.deployed && (
@@ -105,18 +92,10 @@ export default function DeploymentBanner({ clusterName }: { clusterName: string 
             )}
             {status.deployed && (
               <>
-                <Button
-                  size="small"
-                  color="inherit"
-                  onClick={() => openModal('redeploy')}
-                >
+                <Button size="small" color="inherit" onClick={() => openModal('redeploy')}>
                   Redeploy
                 </Button>
-                <Button
-                  size="small"
-                  color="inherit"
-                  onClick={() => openModal('undeploy')}
-                >
+                <Button size="small" color="inherit" onClick={() => openModal('undeploy')}>
                   Undeploy
                 </Button>
               </>
@@ -128,7 +107,9 @@ export default function DeploymentBanner({ clusterName }: { clusterName: string 
         }
       >
         {status.deployed
-          ? `Inspektor Gadget deployed${status.namespace ? ` in ${status.namespace}` : ''}${status.version ? ` (${status.version})` : ''}`
+          ? `Inspektor Gadget deployed${status.namespace ? ` in ${status.namespace}` : ''}${
+              status.version ? ` (${status.version})` : ''
+            }`
           : 'Inspektor Gadget is not deployed on this cluster'}
       </Alert>
 

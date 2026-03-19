@@ -13,11 +13,6 @@ interface DnsTabProps {
 
 export default function DnsTab({ project }: DnsTabProps) {
   return (
-    <ProjectGadgetTab
-      project={project}
-      gadgetImage={GADGET_IMAGE}
-      gadgetLabel="DNS"
-      embedded
-    />
+    <ProjectGadgetTab project={project} gadgetImage={GADGET_IMAGE} gadgetLabel="DNS" embedded />
   );
 }

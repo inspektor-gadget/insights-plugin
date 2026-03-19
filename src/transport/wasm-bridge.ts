@@ -12,9 +12,9 @@
  * - Incoming JSON commands → IGConnection method calls
  * - IGConnection callbacks → JSON response/streaming messages
  */
-import type { IGConnection, GadgetInfo } from './wasm-types';
-import { deployIG, undeployIG, checkIGDeployment, DEFAULT_CONFIG } from '../deploy/ig-deploy';
 import type { DeployConfig } from '../deploy/ig-deploy';
+import { checkIGDeployment, DEFAULT_CONFIG, deployIG, undeployIG } from '../deploy/ig-deploy';
+import type { GadgetInfo, IGConnection } from './wasm-types';
 
 /**
  * IG Desktop JSON protocol message types.
@@ -155,7 +155,7 @@ export class WasmBridge {
    * Stop all active gadgets and clean up.
    */
   destroy(): void {
-    for (const [id, gadget] of this.activeGadgets) {
+    for (const [, gadget] of this.activeGadgets) {
       try {
         gadget.stop();
       } catch {
@@ -191,7 +191,7 @@ export class WasmBridge {
       },
       (error: Error) => {
         this.sendError(reqID, error.message || String(error));
-      },
+      }
     );
   }
 
@@ -242,7 +242,7 @@ export class WasmBridge {
       },
       (setupError: Error) => {
         this.sendError(reqID, setupError.message || String(setupError));
-      },
+      }
     );
 
     if (handle) {
@@ -294,7 +294,7 @@ export class WasmBridge {
             },
           });
         },
-      },
+      }
     );
 
     if (handle) {
@@ -302,6 +302,7 @@ export class WasmBridge {
     }
   }
 
+  // eslint-disable-next-line no-unused-vars
   private handleListInstances(reqID: string, _data: any): void {
     this.ig.listGadgetInstances(
       (instances: Array<Record<string, unknown>>) => {
@@ -309,7 +310,7 @@ export class WasmBridge {
       },
       (error: Error) => {
         this.sendError(reqID, error.message || String(error));
-      },
+      }
     );
   }
 
@@ -349,15 +350,13 @@ export class WasmBridge {
       },
       (error: Error) => {
         this.sendError(reqID, error.message || String(error));
-      },
+      }
     );
   }
 
   /** Synthetic: return the current cluster as the only runtime. */
   private handleGetRuntimes(reqID: string): void {
-    this.sendResponse(reqID, [
-      { name: 'k8s', label: 'Kubernetes' },
-    ]);
+    this.sendResponse(reqID, [{ name: 'k8s', label: 'Kubernetes' }]);
   }
 
   /** Synthetic: no additional runtime params needed in WASM mode. */
@@ -385,13 +384,36 @@ export class WasmBridge {
     // Return deploymentId immediately
     this.sendResponse(reqID, { deploymentId });
 
-    const onProgress = (p: { deploymentId: string; step: string; progress: number; message: string; error?: string }) => {
+    const onProgress = (p: {
+      deploymentId: string;
+      step: string;
+      progress: number;
+      message: string;
+      error?: string;
+    }) => {
       if (p.error) {
-        this.emitMessage({ type: MessageType.DeployError, deploymentId, error: p.error, progress: 0 });
+        this.emitMessage({
+          type: MessageType.DeployError,
+          deploymentId,
+          error: p.error,
+          progress: 0,
+        });
       } else if (p.progress === 100) {
-        this.emitMessage({ type: MessageType.DeployComplete, deploymentId, step: p.step, progress: p.progress, message: p.message });
+        this.emitMessage({
+          type: MessageType.DeployComplete,
+          deploymentId,
+          step: p.step,
+          progress: p.progress,
+          message: p.message,
+        });
       } else {
-        this.emitMessage({ type: MessageType.DeployProgress, deploymentId, step: p.step, progress: p.progress, message: p.message });
+        this.emitMessage({
+          type: MessageType.DeployProgress,
+          deploymentId,
+          step: p.step,
+          progress: p.progress,
+          message: p.message,
+        });
       }
     };
 
@@ -402,7 +424,8 @@ export class WasmBridge {
       otelLogExporters: data?.otelLogExporters ?? [],
       otelMetricExporters: data?.otelMetricExporters ?? [],
       prometheusListen: data?.prometheusListen ?? false,
-      prometheusListenAddress: data?.prometheusListenAddress ?? DEFAULT_CONFIG.prometheusListenAddress,
+      prometheusListenAddress:
+        data?.prometheusListenAddress ?? DEFAULT_CONFIG.prometheusListenAddress,
     };
 
     const doWork = async () => {
@@ -410,17 +433,30 @@ export class WasmBridge {
         if (isUndeploy) {
           await undeployIG(cluster, namespace, onProgress);
         } else if (isRedeploy) {
-          await undeployIG(cluster, namespace, (p) => {
-            onProgress({ ...p, progress: Math.round(p.progress / 2), message: `[Undeploy] ${p.message}` });
+          await undeployIG(cluster, namespace, p => {
+            onProgress({
+              ...p,
+              progress: Math.round(p.progress / 2),
+              message: `[Undeploy] ${p.message}`,
+            });
           });
-          await deployIG(config, cluster, (p) => {
-            onProgress({ ...p, progress: 50 + Math.round(p.progress / 2), message: `[Deploy] ${p.message}` });
+          await deployIG(config, cluster, p => {
+            onProgress({
+              ...p,
+              progress: 50 + Math.round(p.progress / 2),
+              message: `[Deploy] ${p.message}`,
+            });
           });
         } else {
           await deployIG(config, cluster, onProgress);
         }
       } catch (err: any) {
-        this.emitMessage({ type: MessageType.DeployError, deploymentId, error: err?.message || String(err), progress: 0 });
+        this.emitMessage({
+          type: MessageType.DeployError,
+          deploymentId,
+          error: err?.message || String(err),
+          progress: 0,
+        });
       }
     };
 
@@ -446,9 +482,10 @@ export class WasmBridge {
         ),
       });
     } else {
-      const event = typeof rawData === 'object' && rawData !== null
-        ? flattenObject(rawData as Record<string, unknown>)
-        : { value: rawData };
+      const event =
+        typeof rawData === 'object' && rawData !== null
+          ? flattenObject(rawData as Record<string, unknown>)
+          : { value: rawData };
       this.emitMessage({
         type: MessageType.DataEvent,
         instanceID,
@@ -461,22 +498,26 @@ export class WasmBridge {
 
   /** Send a success response. */
   private sendResponse(reqID: string, data: unknown): void {
-    this.emit(JSON.stringify({
-      type: MessageType.Response,
-      reqID,
-      success: true,
-      data,
-    }));
+    this.emit(
+      JSON.stringify({
+        type: MessageType.Response,
+        reqID,
+        success: true,
+        data,
+      })
+    );
   }
 
   /** Send an error response. */
   private sendError(reqID: string, error: string): void {
-    this.emit(JSON.stringify({
-      type: MessageType.Response,
-      reqID,
-      success: false,
-      error,
-    }));
+    this.emit(
+      JSON.stringify({
+        type: MessageType.Response,
+        reqID,
+        success: false,
+        error,
+      })
+    );
   }
 
   /** Emit a streaming message. */

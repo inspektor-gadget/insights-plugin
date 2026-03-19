@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@inspektor-gadget/ig-desktop": "file:vendor/ig-desktop",
-    "svelte": "5.53.5",
+    "svelte": "5.54.0",
     "yaml": "^2.6.0"
   },
   "overrides": {

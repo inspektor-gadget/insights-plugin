@@ -5,8 +5,8 @@
  * WebSocket dies silently, requests hang forever. This wrapper races
  * the request against a timeout so callers get a clear error instead.
  */
-import { apiService } from '@inspektor-gadget/ig-desktop/frontend';
 import type { IGDeploymentStatus } from '@inspektor-gadget/ig-desktop/frontend';
+import { apiService } from '@inspektor-gadget/ig-desktop/frontend';
 
 const IS_WASM = import.meta.env.VITE_TRANSPORT === 'wasm';
 
@@ -16,8 +16,8 @@ export async function requestWithTimeout(cmd: object): Promise<any> {
   const timeout = new Promise((_, reject) =>
     setTimeout(
       () => reject(new Error('Request timed out — connection may be lost')),
-      REQUEST_TIMEOUT_MS,
-    ),
+      REQUEST_TIMEOUT_MS
+    )
   );
   return Promise.race([(apiService as any).request(cmd), timeout]);
 }

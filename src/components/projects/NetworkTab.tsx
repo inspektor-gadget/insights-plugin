@@ -13,11 +13,6 @@ interface NetworkTabProps {
 
 export default function NetworkTab({ project }: NetworkTabProps) {
   return (
-    <ProjectGadgetTab
-      project={project}
-      gadgetImage={GADGET_IMAGE}
-      gadgetLabel="Network"
-      embedded
-    />
+    <ProjectGadgetTab project={project} gadgetImage={GADGET_IMAGE} gadgetLabel="Network" embedded />
   );
 }

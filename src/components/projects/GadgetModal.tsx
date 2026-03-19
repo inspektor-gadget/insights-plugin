@@ -1,14 +1,8 @@
-import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Box,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import ProjectGadgetTab from './ProjectGadgetTab';
+import { Box, Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
+import React from 'react';
 import type { GadgetAction } from './gadget-actions';
+import ProjectGadgetTab from './ProjectGadgetTab';
 
 interface GadgetModalProps {
   action: GadgetAction;

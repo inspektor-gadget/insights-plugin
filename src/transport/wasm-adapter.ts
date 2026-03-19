@@ -11,9 +11,9 @@
  * Implements the same ITransportAdapter interface as WebSocketAdapter,
  * so it can be used as a drop-in replacement in shared-connection.ts.
  */
-import { loadWasm } from './wasm-loader';
-import { findGadgetPod, createPortForward, type PortForwardHandle } from './pod-discovery';
+import { createPortForward, findGadgetPod, type PortForwardHandle } from './pod-discovery';
 import { WasmBridge } from './wasm-bridge';
+import { loadWasm } from './wasm-loader';
 import type { IGConnection } from './wasm-types';
 
 export class WasmTransportAdapter {
@@ -57,37 +57,34 @@ export class WasmTransportAdapter {
 
       // Step 4: Wrap WebSocket with WASM IGConnection
       await new Promise<void>((resolve, reject) => {
-        const ig: IGConnection = window.wrapWebSocket(
-          this.portForwardHandle!.socket,
-          {
-            onReady: () => {
-              console.log('[IG WASM] IGConnection ready');
+        const ig: IGConnection = window.wrapWebSocket(this.portForwardHandle!.socket, {
+          onReady: () => {
+            console.log('[IG WASM] IGConnection ready');
 
-              // Step 5: Create the protocol bridge
-              this.bridge = new WasmBridge(
-                ig,
-                (message: string) => {
-                  // Route bridge output to the message handler
-                  this.messageHandler?.(message);
-                },
-                this.clusterName,
-              );
+            // Step 5: Create the protocol bridge
+            this.bridge = new WasmBridge(
+              ig,
+              (message: string) => {
+                // Route bridge output to the message handler
+                this.messageHandler?.(message);
+              },
+              this.clusterName
+            );
 
-              this._connected = true;
-              this.connectionHandler?.(true);
-              resolve();
-            },
-            onError: (error: Error) => {
-              console.error('[IG WASM] Connection error:', error);
-              this.handleDisconnect();
-              reject(error);
-            },
-            onClose: () => {
-              console.log('[IG WASM] Connection closed');
-              this.handleDisconnect();
-            },
+            this._connected = true;
+            this.connectionHandler?.(true);
+            resolve();
           },
-        );
+          onError: (error: Error) => {
+            console.error('[IG WASM] Connection error:', error);
+            this.handleDisconnect();
+            reject(error);
+          },
+          onClose: () => {
+            console.log('[IG WASM] Connection closed');
+            this.handleDisconnect();
+          },
+        });
       });
     } catch (err) {
       this.handleDisconnect();

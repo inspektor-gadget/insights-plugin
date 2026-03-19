@@ -1,6 +1,6 @@
-import React from 'react';
-import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
 import { DeployModalWrapper } from '@inspektor-gadget/ig-desktop/frontend';
+import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
+import React from 'react';
 import WasmDeployDialog from './WasmDeployDialog';
 
 const IS_WASM = import.meta.env.VITE_TRANSPORT === 'wasm';
@@ -18,7 +18,13 @@ interface DeployModalProps {
  * - WASM: React-native WasmDeployDialog
  * - Backend: Svelte DeployModalWrapper via SvelteWrapper
  */
-export default function DeployModal({ open, onClose, clusterName, redeploy, undeploy }: DeployModalProps) {
+export default function DeployModal({
+  open,
+  onClose,
+  clusterName,
+  redeploy,
+  undeploy,
+}: DeployModalProps) {
   if (!open) return null;
 
   if (IS_WASM) {

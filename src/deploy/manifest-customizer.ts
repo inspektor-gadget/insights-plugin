@@ -2,8 +2,8 @@
  * Customizes pre-rendered Inspektor Gadget manifests at deploy time.
  * Handles namespace substitution, image version changes, and ConfigMap config.
  */
-import { MANIFESTS, APPLY_ORDER, DELETE_ORDER } from './manifests';
 import type { ManifestEntry } from './manifests';
+import { APPLY_ORDER, DELETE_ORDER, MANIFESTS } from './manifests';
 
 export interface OtelExporter {
   name: string;
@@ -39,7 +39,8 @@ export const DEFAULT_CONFIG: DeployConfig = {
  * Parse a YAML manifest string into a K8s-like JSON object.
  * Uses a simple YAML parser sufficient for K8s manifests.
  */
-function parseYaml(yaml: string): any {
+// eslint-disable-next-line no-unused-vars
+function parseYaml(_yaml: string): any {
   // We use a line-based approach since the manifests are well-formed helm output.
   // For robust parsing in the browser without adding a YAML lib dependency,
   // we convert to JSON via a simple state machine.
@@ -64,10 +65,7 @@ function replaceNamespace(yaml: string, namespace: string): string {
   let result = yaml.replace(/(\bnamespace:\s*)gadget\b/g, `$1${namespace}`);
 
   // Replace gadget-namespace config value
-  result = result.replace(
-    /gadget-namespace: gadget/g,
-    `gadget-namespace: ${namespace}`,
-  );
+  result = result.replace(/gadget-namespace: gadget/g, `gadget-namespace: ${namespace}`);
 
   return result;
 }

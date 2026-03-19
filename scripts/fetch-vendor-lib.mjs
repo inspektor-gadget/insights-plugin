@@ -14,7 +14,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { createWriteStream, existsSync, readFileSync, readdirSync } from "node:fs";
+import { createWriteStream, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
@@ -90,6 +90,7 @@ execSync(`rm -rf "${DIST_LIB_DIR}" "${join(VENDOR_DIR, "metadata.json")}"`, {
 });
 
 console.log(`Extracting to ${VENDOR_DIR}...`);
+mkdirSync(VENDOR_DIR, { recursive: true });
 execSync(`tar -xzf "${tarballPath}" -C "${VENDOR_DIR}"`, { stdio: "inherit" });
 
 // Clean up tarball
@@ -157,8 +158,12 @@ if (existsSync(metadataPath)) {
 // --- Sync dist-lib to node_modules ---
 // npm copies vendor/ig-desktop/ at install time, but dist-lib doesn't exist yet.
 // Sync it so that imports through node_modules (e.g. CSS) resolve correctly.
-const nmDistLib = join(PLUGIN_DIR, "node_modules", "@inspektor-gadget", "ig-desktop", "dist-lib");
-if (existsSync(join(PLUGIN_DIR, "node_modules", "@inspektor-gadget", "ig-desktop"))) {
+// Skip if node_modules/@inspektor-gadget/ig-desktop is a symlink to vendor/ig-desktop
+// (e.g. npm linked via file: dependency) — the files are already in the right place.
+const nmPkg = join(PLUGIN_DIR, "node_modules", "@inspektor-gadget", "ig-desktop");
+const isSymlink = existsSync(nmPkg) && lstatSync(nmPkg).isSymbolicLink();
+if (existsSync(nmPkg) && !isSymlink) {
+  const nmDistLib = join(nmPkg, "dist-lib");
   execSync(`rm -rf "${nmDistLib}"`, { stdio: "inherit" });
   execSync(`cp -r "${DIST_LIB_DIR}" "${nmDistLib}"`, { stdio: "inherit" });
 }

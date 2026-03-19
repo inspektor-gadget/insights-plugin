@@ -16,7 +16,7 @@ export function resourceRoute(
       return `/c/${clusterName}/nodes/${value}`;
     case 'container': {
       const ns = (row['k8s.namespace'] as string) || 'default';
-      const pod = (row['k8s.podName'] as string);
+      const pod = row['k8s.podName'] as string;
       if (pod) return `/c/${clusterName}/pods/${ns}/${pod}`;
       return null;
     }

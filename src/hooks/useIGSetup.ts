@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { environments } from '@inspektor-gadget/ig-desktop/frontend';
+import { useTheme } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
 import { getSharedConnection, subscribeConnectionStatus } from '../utils/shared-connection';
 import { bridgeTheme } from '../utils/theme-bridge';
 

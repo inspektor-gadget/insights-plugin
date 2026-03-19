@@ -1,5 +1,8 @@
+import type {
+  GadgetDatasource,
+  GadgetDatasourceField,
+} from '@inspektor-gadget/ig-desktop/frontend';
 import { registerAnnotationProvider } from '@inspektor-gadget/ig-desktop/frontend';
-import type { GadgetDatasourceField, GadgetDatasource } from '@inspektor-gadget/ig-desktop/frontend';
 
 /** Field → annotation mappings for Kubernetes resource fields. */
 const K8S_FIELD_ANNOTATIONS: Record<string, Record<string, string>> = {
@@ -45,6 +48,7 @@ export function registerK8sAnnotations(options?: RegisterOptions): () => void {
         }
       : undefined,
 
+    // eslint-disable-next-line no-unused-vars
     field: (field: GadgetDatasourceField, _ds: GadgetDatasource) => {
       const annotations: Record<string, string> = {
         ...(K8S_FIELD_ANNOTATIONS[field.fullName] ?? {}),

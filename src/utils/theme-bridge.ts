@@ -30,4 +30,3 @@ export function bridgeTheme(muiTheme: any) {
     fontMono: typography?.fontFamilyMonospace || '"Roboto Mono", monospace',
   });
 }
-

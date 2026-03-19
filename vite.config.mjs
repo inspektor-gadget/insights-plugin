@@ -41,9 +41,11 @@ function resolveIGFrontend() {
       }
 
       // Externalize optional runtime adapters (Wails, Electron) that aren't used in Headlamp
+      // Check both paths: symlink (node_modules/@inspektor-gadget/…) and real (vendor/ig-desktop/…)
+      const isIGImporter = importer &&
+        (importer.includes('inspektor-gadget') || importer.includes('ig-desktop'));
       if (
-        importer &&
-        importer.includes('inspektor-gadget') &&
+        isIGImporter &&
         (source === '@wailsio/runtime' || source.startsWith('@wailsio/'))
       ) {
         return { id: source, external: true };
@@ -53,7 +55,7 @@ function resolveIGFrontend() {
       if (
         importer &&
         importer.includes(path.join('dist-lib', '')) &&
-        importer.includes('inspektor-gadget') &&
+        isIGImporter &&
         !source.startsWith('@') &&
         !source.startsWith('svelte') &&
         source.endsWith('.js') &&

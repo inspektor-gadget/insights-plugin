@@ -2,29 +2,18 @@
  * Client-side IG deployment service for WASM mode.
  * Uses Headlamp's ApiProxy to apply/delete K8s manifests.
  */
-import {
-  apply,
-  request as apiRequest,
-  remove,
-} from '@kinvolk/headlamp-plugin/lib/ApiProxy';
+import { apply, remove, request as apiRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 import YAML from 'yaml';
-import { APP_VERSION, CHART_VERSION } from './manifests';
-import type { ManifestEntry } from './manifests';
-import {
-  customizeManifests,
-  getDeleteOrder,
-  DEFAULT_CONFIG,
-} from './manifest-customizer';
 import type { DeployConfig } from './manifest-customizer';
+import { customizeManifests, DEFAULT_CONFIG, getDeleteOrder } from './manifest-customizer';
+import type { ManifestEntry } from './manifests';
+import { APP_VERSION, CHART_VERSION } from './manifests';
 
 export { DEFAULT_CONFIG } from './manifest-customizer';
 export type { DeployConfig, OtelExporter } from './manifest-customizer';
 
 /** Label selectors for identifying IG DaemonSets across deployment methods */
-const GADGET_LABEL_SELECTORS = [
-  'app.kubernetes.io/name=gadget',
-  'k8s-app=gadget',
-];
+const GADGET_LABEL_SELECTORS = ['app.kubernetes.io/name=gadget', 'k8s-app=gadget'];
 
 export interface DeployProgress {
   deploymentId: string;
@@ -41,7 +30,7 @@ export type ProgressCallback = (progress: DeployProgress) => void;
  */
 function apiPath(
   clusterName: string,
-  resource: { apiVersion: string; kind: string; name: string; namespace?: string },
+  resource: { apiVersion: string; kind: string; name: string; namespace?: string }
 ): string {
   const { apiVersion, kind, name, namespace } = resource;
 
@@ -98,7 +87,7 @@ function parseManifest(entry: ManifestEntry): any {
 export async function deployIG(
   config: DeployConfig,
   clusterName: string,
-  onProgress: ProgressCallback,
+  onProgress: ProgressCallback
 ): Promise<void> {
   const deploymentId = `wasm-deploy-${Date.now()}`;
   const manifests = customizeManifests(config);
@@ -194,7 +183,7 @@ export async function deployIG(
 export async function undeployIG(
   clusterName: string,
   namespace: string,
-  onProgress: ProgressCallback,
+  onProgress: ProgressCallback
 ): Promise<void> {
   const deploymentId = `wasm-undeploy-${Date.now()}`;
   const manifests = getDeleteOrder(customizeManifests({ ...DEFAULT_CONFIG, namespace }));
@@ -289,7 +278,7 @@ export async function undeployIG(
  * Queries for DaemonSets/Deployments with IG labels.
  */
 export async function checkIGDeployment(
-  clusterName: string,
+  clusterName: string
 ): Promise<{ deployed: boolean; namespace?: string; version?: string; error?: string }> {
   // Check common namespaces first
   const namespacesToCheck = ['gadget', 'kube-system', 'ig-system', 'inspektor-gadget'];
@@ -297,7 +286,9 @@ export async function checkIGDeployment(
   for (const ns of namespacesToCheck) {
     for (const selector of GADGET_LABEL_SELECTORS) {
       try {
-        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${ns}/daemonsets?labelSelector=${encodeURIComponent(selector)}`;
+        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${ns}/daemonsets?labelSelector=${encodeURIComponent(
+          selector
+        )}`;
         const response = await apiRequest(path, {}, true, false);
 
         if (response?.items?.length > 0) {
@@ -317,7 +308,9 @@ export async function checkIGDeployment(
   // Try all namespaces
   try {
     for (const selector of GADGET_LABEL_SELECTORS) {
-      const path = `/clusters/${clusterName}/apis/apps/v1/daemonsets?labelSelector=${encodeURIComponent(selector)}`;
+      const path = `/clusters/${clusterName}/apis/apps/v1/daemonsets?labelSelector=${encodeURIComponent(
+        selector
+      )}`;
       const response = await apiRequest(path, {}, true, false);
 
       if (response?.items?.length > 0) {
@@ -349,7 +342,7 @@ function extractVersionFromImage(image?: string): string | undefined {
 async function waitForDaemonSet(
   clusterName: string,
   namespace: string,
-  timeoutMs: number,
+  timeoutMs: number
 ): Promise<void> {
   const start = Date.now();
   const labelSelectors = GADGET_LABEL_SELECTORS;
@@ -357,7 +350,9 @@ async function waitForDaemonSet(
   while (Date.now() - start < timeoutMs) {
     for (const selector of labelSelectors) {
       try {
-        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${namespace}/daemonsets?labelSelector=${encodeURIComponent(selector)}`;
+        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${namespace}/daemonsets?labelSelector=${encodeURIComponent(
+          selector
+        )}`;
         const response = await apiRequest(path, {}, true, false);
 
         if (response?.items?.length > 0) {
@@ -384,7 +379,7 @@ async function waitForDaemonSet(
 async function waitForDaemonSetRemoval(
   clusterName: string,
   namespace: string,
-  timeoutMs: number,
+  timeoutMs: number
 ): Promise<void> {
   const start = Date.now();
   const labelSelectors = GADGET_LABEL_SELECTORS;
@@ -393,7 +388,9 @@ async function waitForDaemonSetRemoval(
     let found = false;
     for (const selector of labelSelectors) {
       try {
-        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${namespace}/daemonsets?labelSelector=${encodeURIComponent(selector)}`;
+        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${namespace}/daemonsets?labelSelector=${encodeURIComponent(
+          selector
+        )}`;
         const response = await apiRequest(path, {}, true, false);
 
         if (response?.items?.length > 0) {

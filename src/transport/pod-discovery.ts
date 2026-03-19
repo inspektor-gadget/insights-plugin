@@ -6,9 +6,7 @@
  * `stream()` helper (whose async URL construction can cause the socket
  * to be OPEN before we can pass it to `wrapWebSocket`).
  */
-import {
-  request as apiRequest,
-} from '@kinvolk/headlamp-plugin/lib/ApiProxy';
+import { request as apiRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 
 const GADGET_NAMESPACE = 'gadget';
 const GADGET_LABEL_KEY = 'k8s-app';
@@ -33,18 +31,16 @@ export async function findGadgetPod(clusterName: string): Promise<string> {
     path,
     {},
     true, // autoLogoutOnAuthError
-    false, // useCluster — we handle the cluster prefix ourselves
+    false // useCluster — we handle the cluster prefix ourselves
   );
 
   const pods = response?.items || [];
-  const runningPod = pods.find(
-    (pod: any) => pod.status?.phase === 'Running',
-  );
+  const runningPod = pods.find((pod: any) => pod.status?.phase === 'Running');
 
   if (!runningPod) {
     throw new Error(
       `No running Inspektor Gadget pod found in namespace "${GADGET_NAMESPACE}". ` +
-      'Ensure IG is deployed on your cluster.',
+        'Ensure IG is deployed on your cluster.'
     );
   }
 

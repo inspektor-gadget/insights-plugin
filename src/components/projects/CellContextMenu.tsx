@@ -1,10 +1,10 @@
-import React from 'react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import { Icon } from '@iconify/react';
-import { useHistory } from 'react-router-dom';
 import type { CellInteractionEvent } from '@inspektor-gadget/ig-desktop/frontend';
-import { GADGET_ACTIONS } from './gadget-actions';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import React from 'react';
+import { useHistory } from 'react-router-dom';
 import { resourceRoute } from '../../utils/headlamp-routes';
+import { GADGET_ACTIONS } from './gadget-actions';
 
 interface CellContextMenuProps {
   event: CellInteractionEvent | null;
@@ -21,18 +21,28 @@ const RESOURCE_ICONS: Record<string, string> = {
   container: 'mdi:package-variant',
 };
 
-export default function CellContextMenu({ event, clusterName, onClose, onGadgetAction }: CellContextMenuProps) {
+export default function CellContextMenu({
+  event,
+  clusterName,
+  onClose,
+  onGadgetAction,
+}: CellContextMenuProps) {
   const history = useHistory();
 
   if (!event) return null;
 
   const { value, fieldName, fieldAnnotations, row, position } = event;
-  const displayValue = value != null ? String(value) : '';
+  const displayValue = value !== null && value !== undefined ? String(value) : '';
   const resourceType = fieldAnnotations['interaction.resource-type'];
 
   const handleNavigate = () => {
     if (resourceType && displayValue) {
-      const route = resourceRoute(clusterName, resourceType, displayValue, row as Record<string, unknown>);
+      const route = resourceRoute(
+        clusterName,
+        resourceType,
+        displayValue,
+        row as Record<string, unknown>
+      );
       if (route) {
         history.push(route);
       }
@@ -66,28 +76,27 @@ export default function CellContextMenu({ event, clusterName, onClose, onGadgetA
           <ListItemIcon>
             <Icon icon={RESOURCE_ICONS[resourceType] || 'mdi:open-in-new'} width={20} />
           </ListItemIcon>
-          <ListItemText
-            primary={`Go to ${resourceType}`}
-            secondary={displayValue}
-          />
+          <ListItemText primary={`Go to ${resourceType}`} secondary={displayValue} />
         </MenuItem>
       )}
 
       {/* Gadget actions */}
-      {canProfile && onGadgetAction && GADGET_ACTIONS.map(action => (
-        <MenuItem
-          key={action.id}
-          onClick={() => {
-            onGadgetAction(action.id, rowData);
-            onClose();
-          }}
-        >
-          <ListItemIcon>
-            <Icon icon={action.icon} width={20} />
-          </ListItemIcon>
-          <ListItemText primary={action.label} />
-        </MenuItem>
-      ))}
+      {canProfile &&
+        onGadgetAction &&
+        GADGET_ACTIONS.map(action => (
+          <MenuItem
+            key={action.id}
+            onClick={() => {
+              onGadgetAction(action.id, rowData);
+              onClose();
+            }}
+          >
+            <ListItemIcon>
+              <Icon icon={action.icon} width={20} />
+            </ListItemIcon>
+            <ListItemText primary={action.label} />
+          </MenuItem>
+        ))}
 
       {/* Copy value */}
       {displayValue && (

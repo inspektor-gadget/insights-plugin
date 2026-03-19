@@ -1,5 +1,5 @@
-import React from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import React from 'react';
 import { useIGSetup } from '../hooks/useIGSetup';
 
 interface IGPluginProviderProps {
@@ -30,5 +30,9 @@ export default function IGPluginProvider({ clusterName, children }: IGPluginProv
     );
   }
 
-  return <div className={isDark ? 'dark' : undefined} style={{ display: 'contents' }}>{children}</div>;
+  return (
+    <div className={isDark ? 'dark' : undefined} style={{ display: 'contents' }}>
+      {children}
+    </div>
+  );
 }

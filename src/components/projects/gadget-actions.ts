@@ -18,6 +18,7 @@ const BASE_VIEW_CONFIG: ViewConfig = {
   searchBar: false,
 };
 
+// eslint-disable-next-line no-unused-vars
 function buildProcessParams(podName: string, _pid: string): Record<string, string> {
   return {
     'operator.KubeManager.podname': podName,

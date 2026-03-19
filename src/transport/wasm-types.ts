@@ -31,7 +31,7 @@ export interface IGConnection {
   getGadgetInfo: (
     params: { version: number; imageName: string },
     onSuccess: (info: GadgetInfo) => void,
-    onError: (error: Error) => void,
+    onError: (error: Error) => void
   ) => void;
 
   runGadget: (
@@ -41,18 +41,18 @@ export interface IGConnection {
       paramValues?: Record<string, string>;
     },
     callbacks: RunGadgetCallbacks,
-    onSetupError: (error: Error) => void,
+    onSetupError: (error: Error) => void
   ) => { stop: () => void };
 
   listGadgetInstances: (
     onSuccess: (instances: Array<Record<string, unknown>>) => void,
-    onError: (error: Error) => void,
+    onError: (error: Error) => void
   ) => void;
 
   deleteGadgetInstance: (
     id: string,
     onSuccess: () => void,
-    onError: (error: Error) => void,
+    onError: (error: Error) => void
   ) => void;
 
   attachGadgetInstance: (
@@ -60,7 +60,7 @@ export interface IGConnection {
       instanceName: string;
       [key: string]: unknown;
     },
-    callbacks: RunGadgetCallbacks,
+    callbacks: RunGadgetCallbacks
   ) => { stop: () => void };
 }
 
@@ -72,9 +72,6 @@ declare global {
       importObject: WebAssembly.Imports;
       run(instance: WebAssembly.Instance): Promise<void>;
     };
-    wrapWebSocket: (
-      socket: WebSocket,
-      callbacks: WrapWebSocketCallbacks,
-    ) => IGConnection;
+    wrapWebSocket: (socket: WebSocket, callbacks: WrapWebSocketCallbacks) => IGConnection;
   }
 }

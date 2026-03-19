@@ -1,31 +1,27 @@
-import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Icon } from '@iconify/react';
+import type {
+  GadgetInfo,
+  GadgetInstanceData,
+  GadgetParam,
+} from '@inspektor-gadget/ig-desktop/frontend';
+import { instances } from '@inspektor-gadget/ig-desktop/frontend';
+import { K8s } from '@kinvolk/headlamp-plugin/lib';
 import {
+  Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
+  Divider,
   Paper,
   TextField,
   Typography,
-  Alert,
-  Chip,
-  IconButton,
-  Tooltip,
-  Divider,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
-import {
-  instances,
-} from '@inspektor-gadget/ig-desktop/frontend';
-import type {
-  GadgetInfo,
-  GadgetParam,
-  GadgetInstanceData,
-} from '@inspektor-gadget/ig-desktop/frontend';
+import React, { useCallback, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { requestWithTimeout } from '../utils/api-request';
-import IGPluginProvider from './IGPluginProvider';
 import DeploymentBanner from './DeploymentBanner';
+import IGPluginProvider from './IGPluginProvider';
 
 /** Parameter form for a gadget's configurable params */
 function ParamForm({
@@ -96,17 +92,14 @@ function RunningInstances({ clusterName }: { clusterName: string }) {
               cursor: 'pointer',
               '&:hover': { bgcolor: 'action.hover' },
             }}
-            onClick={() =>
-              history.push(`/c/${clusterName}/ig/instance/${id}`)
-            }
+            onClick={() => history.push(`/c/${clusterName}/ig/instance/${id}`)}
           >
             <Box>
               <Typography variant="body2" fontWeight={500}>
                 {inst.name || inst.gadgetInfo?.imageName || id}
               </Typography>
               <Typography variant="caption" color="textSecondary">
-                {inst.running ? 'Running' : 'Stopped'} &middot;{' '}
-                {inst.eventCount ?? 0} events
+                {inst.running ? 'Running' : 'Stopped'} &middot; {inst.eventCount ?? 0} events
               </Typography>
             </Box>
             <Chip
@@ -195,102 +188,91 @@ export default function GadgetRunnerPage() {
         <DeploymentBanner clusterName={clusterName} />
       </Box>
       <IGPluginProvider clusterName={clusterName}>
-      <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Run Gadget
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-          Enter a gadget image URL to inspect your cluster with Inspektor Gadget.
-        </Typography>
+        <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
+          <Typography variant="h5" gutterBottom>
+            Run Gadget
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+            Enter a gadget image URL to inspect your cluster with Inspektor Gadget.
+          </Typography>
 
-        {/* Image input */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <TextField
-            label="Gadget Image"
-            placeholder="ghcr.io/inspektor-gadget/gadget/trace_exec:latest"
-            value={image}
-            onChange={e => setImage(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') fetchGadgetInfo();
-            }}
-            fullWidth
-            size="small"
-          />
-          <Button
-            variant="contained"
-            onClick={fetchGadgetInfo}
-            disabled={!image.trim() || loading}
-            sx={{ whiteSpace: 'nowrap' }}
-          >
-            {loading ? <CircularProgress size={20} /> : 'Load Info'}
-          </Button>
-        </Box>
+          {/* Image input */}
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <TextField
+              label="Gadget Image"
+              placeholder="ghcr.io/inspektor-gadget/gadget/trace_exec:latest"
+              value={image}
+              onChange={e => setImage(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') fetchGadgetInfo();
+              }}
+              fullWidth
+              size="small"
+            />
+            <Button
+              variant="contained"
+              onClick={fetchGadgetInfo}
+              disabled={!image.trim() || loading}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              {loading ? <CircularProgress size={20} /> : 'Load Info'}
+            </Button>
+          </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        {/* Gadget info + params */}
-        {gadgetInfo && (
-          <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Icon icon="mdi:bug-outline" width={20} />
-              <Typography variant="subtitle1" fontWeight={600}>
-                {gadgetInfo.imageName || image}
-              </Typography>
-            </Box>
-
-            {/* Datasources info */}
-            {(gadgetInfo.datasources || gadgetInfo.dataSources) && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="textSecondary">
-                  Datasources:{' '}
-                  {(gadgetInfo.datasources || gadgetInfo.dataSources || [])
-                    .map(ds => ds.name)
-                    .join(', ')}
+          {/* Gadget info + params */}
+          {gadgetInfo && (
+            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Icon icon="mdi:bug-outline" width={20} />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {gadgetInfo.imageName || image}
                 </Typography>
               </Box>
-            )}
 
-            <Divider sx={{ my: 1.5 }} />
+              {/* Datasources info */}
+              {(gadgetInfo.datasources || gadgetInfo.dataSources) && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" color="textSecondary">
+                    Datasources:{' '}
+                    {(gadgetInfo.datasources || gadgetInfo.dataSources || [])
+                      .map(ds => ds.name)
+                      .join(', ')}
+                  </Typography>
+                </Box>
+              )}
 
-            {/* Parameters */}
-            <Typography variant="subtitle2" gutterBottom>
-              Parameters
-            </Typography>
-            <ParamForm
-              params={gadgetParams}
-              values={paramValues}
-              onChange={handleParamChange}
-            />
+              <Divider sx={{ my: 1.5 }} />
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={runGadget}
-                disabled={running}
-                startIcon={
-                  running ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    <Icon icon="mdi:play" />
-                  )
-                }
-              >
-                {running ? 'Starting...' : 'Run Gadget'}
-              </Button>
-            </Box>
-          </Paper>
-        )}
+              {/* Parameters */}
+              <Typography variant="subtitle2" gutterBottom>
+                Parameters
+              </Typography>
+              <ParamForm params={gadgetParams} values={paramValues} onChange={handleParamChange} />
 
-        {/* Running instances */}
-        <RunningInstances clusterName={clusterName} />
-      </Box>
-    </IGPluginProvider>
+              <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={runGadget}
+                  disabled={running}
+                  startIcon={running ? <CircularProgress size={16} /> : <Icon icon="mdi:play" />}
+                >
+                  {running ? 'Starting...' : 'Run Gadget'}
+                </Button>
+              </Box>
+            </Paper>
+          )}
+
+          {/* Running instances */}
+          <RunningInstances clusterName={clusterName} />
+        </Box>
+      </IGPluginProvider>
     </>
   );
 }
-

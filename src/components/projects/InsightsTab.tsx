@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Paper, Typography, CircularProgress, Alert, Button } from '@mui/material';
 import { Icon } from '@iconify/react';
+import { Alert, Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
 import { checkDeploymentStatus } from '../../utils/api-request';
 import { resetConnection } from '../../utils/shared-connection';
 import DeployModal from '../DeployModal';
-import ProcessesTab from './ProcessesTab';
-import NetworkTab from './NetworkTab';
 import DnsTab from './DnsTab';
+import NetworkTab from './NetworkTab';
+import ProcessesTab from './ProcessesTab';
 
 type View = 'landing' | 'processes' | 'network' | 'dns';
 
@@ -135,8 +135,8 @@ export default function InsightsTab({ project }: InsightsTabProps) {
               <Typography variant="h6">Inspektor Gadget Not Deployed</Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Inspektor Gadget must be deployed on this cluster before you can use Insights.
-              Deploy it now to start monitoring processes, network traffic, and DNS queries.
+              Inspektor Gadget must be deployed on this cluster before you can use Insights. Deploy
+              it now to start monitoring processes, network traffic, and DNS queries.
             </Typography>
             <Button
               variant="contained"
@@ -160,7 +160,7 @@ export default function InsightsTab({ project }: InsightsTabProps) {
 
     return (
       <Box sx={{ p: 3, display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-        {CARDS.map((card) => (
+        {CARDS.map(card => (
           <Paper
             key={card.view}
             onClick={() => setView(card.view)}

@@ -34,7 +34,9 @@ async function fetchWasmWithFallback(): Promise<Response> {
     }
   }
   throw new Error(
-    `Failed to fetch WASM binary. Checked paths: ${prefixes.map(p => `${p}/${PLUGIN_NAME}/main.wasm.gz`).join(', ')}`,
+    `Failed to fetch WASM binary. Checked paths: ${prefixes
+      .map(p => `${p}/${PLUGIN_NAME}/main.wasm.gz`)
+      .join(', ')}`
   );
 }
 
@@ -91,13 +93,15 @@ export async function loadWasm(): Promise<void> {
 
       // Start the Go runtime (runs in the background — the promise resolves
       // when the Go program exits, which is only on error).
-      go.run(result.instance).then(() => {
-        console.error('[IG WASM] Go runtime exited unexpectedly');
-        loadPromise = null;
-      }).catch(err => {
-        console.error('[IG WASM] Go runtime error:', err);
-        loadPromise = null;
-      });
+      go.run(result.instance)
+        .then(() => {
+          console.error('[IG WASM] Go runtime exited unexpectedly');
+          loadPromise = null;
+        })
+        .catch(err => {
+          console.error('[IG WASM] Go runtime error:', err);
+          loadPromise = null;
+        });
 
       // Wait briefly for the Go runtime to register window.wrapWebSocket
       await waitForWrapWebSocket();

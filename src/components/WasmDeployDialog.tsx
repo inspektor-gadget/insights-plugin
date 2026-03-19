@@ -2,33 +2,33 @@
  * React-native deploy dialog for WASM mode.
  * Replaces the Svelte DeployModalWrapper when there's no Go backend.
  */
-import React, { useState, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  FormControlLabel,
-  Switch,
-  Typography,
-  Box,
-  LinearProgress,
-  Alert,
-  IconButton,
-  Divider,
-  Paper,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
 import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  LinearProgress,
+  Paper,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
+import React, { useCallback, useState } from 'react';
+import type { DeployConfig, DeployProgress, OtelExporter } from '../deploy/ig-deploy';
+import {
+  APP_VERSION,
+  CHART_VERSION,
+  DEFAULT_CONFIG,
   deployIG,
   undeployIG,
-  DEFAULT_CONFIG,
-  CHART_VERSION,
-  APP_VERSION,
 } from '../deploy/ig-deploy';
-import type { DeployConfig, OtelExporter, DeployProgress } from '../deploy/ig-deploy';
 
 interface WasmDeployDialogProps {
   open: boolean;
@@ -73,7 +73,7 @@ export default function WasmDeployDialog({
         await undeployIG(clusterName, config.namespace, onProgress);
       } else if (mode === 'redeploy') {
         // Undeploy first, then deploy
-        await undeployIG(clusterName, config.namespace, (p) => {
+        await undeployIG(clusterName, config.namespace, p => {
           onProgress({
             ...p,
             // Scale undeploy progress to 0-50%
@@ -81,7 +81,7 @@ export default function WasmDeployDialog({
             message: `[Undeploy] ${p.message}`,
           });
         });
-        await deployIG(config, clusterName, (p) => {
+        await deployIG(config, clusterName, p => {
           onProgress({
             ...p,
             // Scale deploy progress to 50-100%
@@ -100,9 +100,10 @@ export default function WasmDeployDialog({
     }
   }, [mode, config, clusterName]);
 
-  const title = mode === 'undeploy'
-    ? 'Undeploy Inspektor Gadget'
-    : mode === 'redeploy'
+  const title =
+    mode === 'undeploy'
+      ? 'Undeploy Inspektor Gadget'
+      : mode === 'redeploy'
       ? 'Redeploy Inspektor Gadget'
       : 'Deploy Inspektor Gadget';
 
@@ -110,13 +111,7 @@ export default function WasmDeployDialog({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent dividers>
-        {phase === 'form' && (
-          <DeployForm
-            config={config}
-            setConfig={setConfig}
-            mode={mode}
-          />
-        )}
+        {phase === 'form' && <DeployForm config={config} setConfig={setConfig} mode={mode} />}
         {(phase === 'progress' || phase === 'done' || phase === 'error') && (
           <ProgressView progress={progress} error={error} phase={phase} />
         )}
@@ -166,7 +161,7 @@ function DeployForm({
       <TextField
         label="Namespace"
         value={config.namespace}
-        onChange={(e) => setConfig({ ...config, namespace: e.target.value })}
+        onChange={e => setConfig({ ...config, namespace: e.target.value })}
         size="small"
         fullWidth
         disabled={mode === 'undeploy'}
@@ -178,7 +173,7 @@ function DeployForm({
             control={
               <Switch
                 checked={config.verifyImage}
-                onChange={(e) => setConfig({ ...config, verifyImage: e.target.checked })}
+                onChange={e => setConfig({ ...config, verifyImage: e.target.checked })}
               />
             }
             label="Verify Image Signatures"
@@ -189,7 +184,7 @@ function DeployForm({
           <ExporterSection
             title="OTel Log Exporters"
             exporters={config.otelLogExporters}
-            onChange={(exporters) => setConfig({ ...config, otelLogExporters: exporters })}
+            onChange={exporters => setConfig({ ...config, otelLogExporters: exporters })}
             showMetricsFields={false}
           />
 
@@ -198,8 +193,8 @@ function DeployForm({
           <ExporterSection
             title="OTel Metric Exporters"
             exporters={config.otelMetricExporters}
-            onChange={(exporters) => setConfig({ ...config, otelMetricExporters: exporters })}
-            showMetricsFields={true}
+            onChange={exporters => setConfig({ ...config, otelMetricExporters: exporters })}
+            showMetricsFields
           />
 
           <Divider />
@@ -208,7 +203,7 @@ function DeployForm({
             control={
               <Switch
                 checked={config.prometheusListen}
-                onChange={(e) => setConfig({ ...config, prometheusListen: e.target.checked })}
+                onChange={e => setConfig({ ...config, prometheusListen: e.target.checked })}
               />
             }
             label="Prometheus Metrics Listener"
@@ -218,7 +213,7 @@ function DeployForm({
             <TextField
               label="Listen Address"
               value={config.prometheusListenAddress}
-              onChange={(e) => setConfig({ ...config, prometheusListenAddress: e.target.value })}
+              onChange={e => setConfig({ ...config, prometheusListenAddress: e.target.value })}
               size="small"
               fullWidth
               placeholder="0.0.0.0:2224"
@@ -253,7 +248,12 @@ function ExporterSection({
         endpoint: '',
         insecure: false,
         ...(showMetricsFields
-          ? { temporality: 'cumulative', interval: 60, collectGoMetrics: false, collectIGMetrics: false }
+          ? {
+              temporality: 'cumulative',
+              interval: 60,
+              collectGoMetrics: false,
+              collectIGMetrics: false,
+            }
           : { compression: '' }),
       },
     ]);
@@ -288,14 +288,14 @@ function ExporterSection({
             <TextField
               label="Name"
               value={exp.name}
-              onChange={(e) => updateExporter(idx, { name: e.target.value })}
+              onChange={e => updateExporter(idx, { name: e.target.value })}
               size="small"
               sx={{ flex: 1 }}
             />
             <TextField
               label="Endpoint"
               value={exp.endpoint}
-              onChange={(e) => updateExporter(idx, { endpoint: e.target.value })}
+              onChange={e => updateExporter(idx, { endpoint: e.target.value })}
               size="small"
               sx={{ flex: 2 }}
               placeholder="localhost:4317"
@@ -311,7 +311,7 @@ function ExporterSection({
                 <Switch
                   size="small"
                   checked={exp.insecure ?? false}
-                  onChange={(e) => updateExporter(idx, { insecure: e.target.checked })}
+                  onChange={e => updateExporter(idx, { insecure: e.target.checked })}
                 />
               }
               label="Insecure"
@@ -321,7 +321,7 @@ function ExporterSection({
               <TextField
                 label="Compression"
                 value={exp.compression ?? ''}
-                onChange={(e) => updateExporter(idx, { compression: e.target.value })}
+                onChange={e => updateExporter(idx, { compression: e.target.value })}
                 size="small"
                 sx={{ width: 140 }}
                 placeholder="gzip"
@@ -333,7 +333,7 @@ function ExporterSection({
                 <TextField
                   label="Temporality"
                   value={exp.temporality ?? 'cumulative'}
-                  onChange={(e) => updateExporter(idx, { temporality: e.target.value })}
+                  onChange={e => updateExporter(idx, { temporality: e.target.value })}
                   size="small"
                   sx={{ width: 140 }}
                 />
@@ -341,7 +341,7 @@ function ExporterSection({
                   label="Interval (s)"
                   type="number"
                   value={exp.interval ?? 60}
-                  onChange={(e) => updateExporter(idx, { interval: Number(e.target.value) })}
+                  onChange={e => updateExporter(idx, { interval: Number(e.target.value) })}
                   size="small"
                   sx={{ width: 100 }}
                 />
@@ -350,7 +350,7 @@ function ExporterSection({
                     <Switch
                       size="small"
                       checked={exp.collectGoMetrics ?? false}
-                      onChange={(e) => updateExporter(idx, { collectGoMetrics: e.target.checked })}
+                      onChange={e => updateExporter(idx, { collectGoMetrics: e.target.checked })}
                     />
                   }
                   label="Go Metrics"
@@ -360,7 +360,7 @@ function ExporterSection({
                     <Switch
                       size="small"
                       checked={exp.collectIGMetrics ?? false}
-                      onChange={(e) => updateExporter(idx, { collectIGMetrics: e.target.checked })}
+                      onChange={e => updateExporter(idx, { collectIGMetrics: e.target.checked })}
                     />
                   }
                   label="IG Metrics"
@@ -396,22 +396,16 @@ function ProgressView({
             value={progress.progress}
             color={phase === 'error' ? 'error' : phase === 'done' ? 'success' : 'primary'}
           />
-          <Typography variant="body2">
-            {progress.message}
-          </Typography>
+          <Typography variant="body2">{progress.message}</Typography>
           <Typography variant="caption" color="textSecondary">
             Step: {progress.step} ({progress.progress}%)
           </Typography>
         </>
       )}
 
-      {error && (
-        <Alert severity="error">{error}</Alert>
-      )}
+      {error && <Alert severity="error">{error}</Alert>}
 
-      {phase === 'done' && (
-        <Alert severity="success">Operation completed successfully.</Alert>
-      )}
+      {phase === 'done' && <Alert severity="success">Operation completed successfully.</Alert>}
     </Box>
   );
 }

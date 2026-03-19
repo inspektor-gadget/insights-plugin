@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable */
 // Go WASM runtime glue — ported from plugins/inspektor-gadget/src/gadgets/wasm.js
 /*
  * Copyright 2018-2024 The Inspektor Gadget authors

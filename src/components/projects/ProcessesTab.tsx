@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
-import ProjectGadgetTab from './ProjectGadgetTab';
-import CellContextMenu from './CellContextMenu';
-import GadgetModal from './GadgetModal';
-import { GADGET_ACTIONS, type GadgetAction } from './gadget-actions';
-import { registerK8sAnnotations } from '../../utils/k8s-annotations';
-import { resourceRoute } from '../../utils/headlamp-routes';
 import type { CellInteractionEvent } from '@inspektor-gadget/ig-desktop/frontend';
 import type { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { resourceRoute } from '../../utils/headlamp-routes';
+import { registerK8sAnnotations } from '../../utils/k8s-annotations';
+import CellContextMenu from './CellContextMenu';
+import { GADGET_ACTIONS, type GadgetAction } from './gadget-actions';
+import GadgetModal from './GadgetModal';
+import ProjectGadgetTab from './ProjectGadgetTab';
 
 const GADGET_IMAGE = 'ghcr.io/inspektor-gadget/gadget/top_process:latest';
 
@@ -33,7 +33,10 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
   const nsFilter = project.namespaces[0] ? `k8s.namespace==${project.namespaces[0]}` : '';
   const history = useHistory();
   const [contextMenuEvent, setContextMenuEvent] = useState<CellInteractionEvent | null>(null);
-  const [activeGadget, setActiveGadget] = useState<{ action: GadgetAction; row: Record<string, unknown> } | null>(null);
+  const [activeGadget, setActiveGadget] = useState<{
+    action: GadgetAction;
+    row: Record<string, unknown>;
+  } | null>(null);
 
   // Register k8s annotation providers
   useEffect(() => {
@@ -46,8 +49,13 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
   handleCellClickRef.current = useCallback(
     (event: CellInteractionEvent) => {
       const resourceType = event.fieldAnnotations['interaction.resource-type'];
-      if (resourceType && event.value != null) {
-        const route = resourceRoute(clusterName, resourceType, String(event.value), event.row as Record<string, unknown>);
+      if (resourceType && event.value !== null && event.value !== undefined) {
+        const route = resourceRoute(
+          clusterName,
+          resourceType,
+          String(event.value),
+          event.row as Record<string, unknown>
+        );
         if (route) {
           history.push(route);
         }
@@ -57,16 +65,19 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
   );
 
   const handleCellContextMenuRef = useRef<(e: CellInteractionEvent) => void>(() => {});
-  handleCellContextMenuRef.current = useCallback(
-    (event: CellInteractionEvent) => {
-      setContextMenuEvent(event);
-    },
-    []
-  );
+  handleCellContextMenuRef.current = useCallback((event: CellInteractionEvent) => {
+    setContextMenuEvent(event);
+  }, []);
 
   // Stable callbacks that read from refs (survive SvelteWrapper's frozen props)
-  const stableCellClick = useCallback((e: CellInteractionEvent) => handleCellClickRef.current(e), []);
-  const stableCellContextMenu = useCallback((e: CellInteractionEvent) => handleCellContextMenuRef.current(e), []);
+  const stableCellClick = useCallback(
+    (e: CellInteractionEvent) => handleCellClickRef.current(e),
+    []
+  );
+  const stableCellContextMenu = useCallback(
+    (e: CellInteractionEvent) => handleCellContextMenuRef.current(e),
+    []
+  );
 
   return (
     <>

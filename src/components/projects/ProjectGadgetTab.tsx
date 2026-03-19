@@ -1,26 +1,15 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Typography,
-  Alert,
-  Paper,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
-import {
-  apiService,
-  instances,
-  GadgetWrapper,
-} from '@inspektor-gadget/ig-desktop/frontend';
 import type {
-  IGDeploymentStatus,
-  GadgetInfo,
-  ViewConfig,
   CellClickHandler,
   CellContextMenuHandler,
+  GadgetInfo,
+  IGDeploymentStatus,
+  ViewConfig,
 } from '@inspektor-gadget/ig-desktop/frontend';
+import { apiService, GadgetWrapper, instances } from '@inspektor-gadget/ig-desktop/frontend';
+import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
+import { Alert, Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useIGSetup } from '../../hooks/useIGSetup';
 import { requestWithTimeout } from '../../utils/api-request';
 import DeployModal from '../DeployModal';
@@ -72,7 +61,9 @@ export default function ProjectGadgetTab({
   const [instanceId, setInstanceId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
-  const [deployModalMode, setDeployModalMode] = useState<'deploy' | 'redeploy' | 'undeploy'>('deploy');
+  const [deployModalMode, setDeployModalMode] = useState<'deploy' | 'redeploy' | 'undeploy'>(
+    'deploy'
+  );
 
   const instanceRef = useRef<string | null>(null);
   const prevConnected = useRef(false);
@@ -143,7 +134,9 @@ export default function ProjectGadgetTab({
         Object.assign(params, extraParams);
       }
 
-      const id = `project-${project.id}-${gadgetLabel.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+      const id = `project-${project.id}-${gadgetLabel
+        .toLowerCase()
+        .replace(/\s+/g, '-')}-${Date.now()}`;
       await requestWithTimeout({
         cmd: 'runGadget',
         data: { image: gadgetImage, clusterName, params, id },
@@ -158,26 +151,29 @@ export default function ProjectGadgetTab({
     }
   }, [clusterName, gadgetImage, project.namespaces, project.id, gadgetLabel, extraParams]);
 
-  const stopAndRemoveGadget = useCallback(async (id: string) => {
-    try {
-      await requestWithTimeout({
-        cmd: 'stopInstance',
-        data: { id },
-      });
-    } catch {
-      // Instance may already be stopped
-    }
-    try {
-      await requestWithTimeout({
-        cmd: 'removeInstance',
-        data: { id, clusterName },
-      });
-    } catch {
-      // Instance may already be removed
-    }
-    // Clean up client-side instances store
-    delete (instances as any)[id];
-  }, [clusterName]);
+  const stopAndRemoveGadget = useCallback(
+    async (id: string) => {
+      try {
+        await requestWithTimeout({
+          cmd: 'stopInstance',
+          data: { id },
+        });
+      } catch {
+        // Instance may already be stopped
+      }
+      try {
+        await requestWithTimeout({
+          cmd: 'removeInstance',
+          data: { id, clusterName },
+        });
+      } catch {
+        // Instance may already be removed
+      }
+      // Clean up client-side instances store
+      delete (instances as any)[id];
+    },
+    [clusterName]
+  );
 
   const stopGadget = useCallback(async () => {
     const id = instanceRef.current;
@@ -364,7 +360,10 @@ export default function ProjectGadgetTab({
 
   // Gadget running — show output
   return (
-    <Box className={isDark ? 'dark' : undefined} sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <Box
+      className={isDark ? 'dark' : undefined}
+      sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+    >
       {/* Toolbar — hidden in embedded mode */}
       {!embedded && (
         <Box

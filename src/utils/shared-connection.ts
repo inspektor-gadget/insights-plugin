@@ -13,11 +13,7 @@
  *
  * Includes auto-reconnect with exponential backoff.
  */
-import {
-  WebSocketAdapter,
-  apiService,
-  initializeIG,
-} from '@inspektor-gadget/ig-desktop/frontend';
+import { apiService, initializeIG, WebSocketAdapter } from '@inspektor-gadget/ig-desktop/frontend';
 
 const IS_WASM = import.meta.env.VITE_TRANSPORT === 'wasm';
 
@@ -101,7 +97,7 @@ function startPing() {
     if (!adapter || !connectedState) return;
     const pingReq = (apiService as any).request({ cmd: 'helo' });
     const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('ping timeout')), PING_TIMEOUT_MS),
+      setTimeout(() => reject(new Error('ping timeout')), PING_TIMEOUT_MS)
     );
     Promise.race([pingReq, timeout]).catch(() => {
       console.warn('[IG] Ping timeout — forcing reconnect');
@@ -234,9 +230,7 @@ export function getSharedConnection(clusterName?: string): TransportAdapter {
  * then on every subsequent change.
  * Returns an unsubscribe function.
  */
-export function subscribeConnectionStatus(
-  callback: (connected: boolean) => void,
-): () => void {
+export function subscribeConnectionStatus(callback: (connected: boolean) => void): () => void {
   listeners.add(callback);
   callback(connectedState);
   return () => {
