@@ -1,6 +1,6 @@
 {
   "name": "insights-plugin",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Insights plugin for Headlamp",
   "igDesktop": {
     "frontendLibVersion": "v0.4.0"
