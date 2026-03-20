@@ -7,7 +7,7 @@
  */
 import './wasm-exec.js';
 
-const PLUGIN_NAME = 'ig-desktop';
+const PLUGIN_NAME = 'insights-plugin';
 
 let loadPromise: Promise<void> | null = null;
 
