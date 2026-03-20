@@ -82,7 +82,7 @@ registerRouteFilter(route =>
 
 registerProjectDetailsTab({
   id: 'ig-insights',
-  label: 'Insights',
+  label: 'Insights (Preview)',
   icon: 'mdi:lightbulb-outline',
   component: ({ project }) => <InsightsTab project={project} />,
   isEnabled: async () => isEnabled(),
