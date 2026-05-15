@@ -121,7 +121,7 @@ export default function InsightsTab({ project }: InsightsTabProps) {
               </Button>
             }
           >
-            Failed to check Inspektor Gadget deployment: {error}
+            Failed to check Insights Agent deployment: {error}
           </Alert>
         </Box>
       );
@@ -133,18 +133,18 @@ export default function InsightsTab({ project }: InsightsTabProps) {
           <Paper sx={{ p: 3, maxWidth: 520, border: '1px solid', borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Icon icon="mdi:alert-circle-outline" width={28} color="inherit" />
-              <Typography variant="h6">Inspektor Gadget Not Deployed</Typography>
+              <Typography variant="h6">Insights Agent Not Deployed</Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Inspektor Gadget must be deployed on this cluster before you can use Insights. Deploy
-              it now to start monitoring processes, network traffic, and DNS queries.
+              Insights Agent must be deployed on this cluster before you can use Insights. Deploy it
+              now to start monitoring processes, network traffic, and DNS queries.
             </Typography>
             <Button
               variant="contained"
               startIcon={<Icon icon="mdi:rocket-launch" width={18} />}
               onClick={() => setDeployOpen(true)}
             >
-              Deploy Inspektor Gadget
+              Deploy Insights Agent
             </Button>
           </Paper>
 

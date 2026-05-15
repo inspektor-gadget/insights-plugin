@@ -102,14 +102,19 @@ export default function WasmDeployDialog({
 
   const title =
     mode === 'undeploy'
-      ? 'Undeploy Inspektor Gadget'
+      ? 'Undeploy Insights Agent'
       : mode === 'redeploy'
-      ? 'Redeploy Inspektor Gadget'
-      : 'Deploy Inspektor Gadget';
+      ? 'Redeploy Insights Agent'
+      : 'Deploy Insights Agent';
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle>
+        {title}
+        <div style={{ fontSize: '0.6em' }}>
+          The Insights agent is powered by the OSS project Inspektor Gadget
+        </div>
+      </DialogTitle>
       <DialogContent dividers>
         {phase === 'form' && <DeployForm config={config} setConfig={setConfig} mode={mode} />}
         {(phase === 'progress' || phase === 'done' || phase === 'error') && (

@@ -107,10 +107,10 @@ export default function DeploymentBanner({ clusterName }: { clusterName: string 
         }
       >
         {status.deployed
-          ? `Inspektor Gadget deployed${status.namespace ? ` in ${status.namespace}` : ''}${
+          ? `Insights Agent deployed${status.namespace ? ` in namespace ${status.namespace}` : ''}${
               status.version ? ` (${status.version})` : ''
             }`
-          : 'Inspektor Gadget is not deployed on this cluster'}
+          : 'Insights Agent is not deployed on this cluster'}
       </Alert>
 
       <DeployModal
