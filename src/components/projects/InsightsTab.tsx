@@ -89,7 +89,8 @@ export default function InsightsTab({ project }: InsightsTabProps) {
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const tab = (e.target as HTMLElement).closest('[role="tab"]');
-      if (tab && tab.textContent?.trim() === 'Insights') {
+      // Hacky way to get back to the landing page
+      if (tab && tab.textContent?.trim().startsWith('Insights')) {
         setView('landing');
       }
     };
