@@ -1,5 +1,6 @@
 import type { CellInteractionEvent } from '@inspektor-gadget/ig-desktop/frontend';
 import type { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { resourceRoute } from '../../utils/headlamp-routes';
@@ -29,6 +30,7 @@ interface ProcessesTabProps {
 }
 
 export default function ProcessesTab({ project }: ProcessesTabProps) {
+  const { t } = useTranslation();
   const clusterName = project.clusters[0] || '';
   const nsFilter = project.namespaces[0] ? `k8s.namespace==${project.namespaces[0]}` : '';
   const history = useHistory();
@@ -84,7 +86,7 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
       <ProjectGadgetTab
         project={project}
         gadgetImage={GADGET_IMAGE}
-        gadgetLabel="Processes"
+        gadgetLabel={t('Processes')}
         embedded
         viewConfig={EMBEDDED_VIEW_CONFIG}
         onCellClick={stableCellClick}

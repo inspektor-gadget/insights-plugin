@@ -1,4 +1,5 @@
 import { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import ProjectGadgetTab from './ProjectGadgetTab';
 
@@ -20,11 +21,12 @@ interface NetworkTabProps {
 }
 
 export default function NetworkTab({ project }: NetworkTabProps) {
+  const { t } = useTranslation();
   return (
     <ProjectGadgetTab
       project={project}
       gadgetImage={GADGET_IMAGE}
-      gadgetLabel="Network"
+      gadgetLabel={t('Network')}
       viewConfig={EMBEDDED_VIEW_CONFIG}
       embedded
     />

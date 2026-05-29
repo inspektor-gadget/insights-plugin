@@ -7,6 +7,7 @@
  */
 import type { IGDeploymentStatus } from '@inspektor-gadget/ig-desktop/frontend';
 import { apiService } from '@inspektor-gadget/ig-desktop/frontend';
+import { getGadgetNamespace } from './plugin-config';
 
 const IS_WASM = import.meta.env.VITE_TRANSPORT === 'wasm';
 
@@ -26,14 +27,18 @@ export async function requestWithTimeout(cmd: object): Promise<any> {
  * Check IG deployment status, routing to the appropriate backend:
  * - WASM mode: queries K8s API directly via ig-deploy
  * - Backend mode: goes through the IG transport WebSocket
+ *
+ * The configured per-cluster gadget namespace is forwarded so both paths
+ * check the same namespace the WASM transport will try to connect to.
  */
 export async function checkDeploymentStatus(clusterName: string): Promise<IGDeploymentStatus> {
+  const namespace = getGadgetNamespace(clusterName);
   if (IS_WASM) {
     const { checkIGDeployment } = await import('../deploy/ig-deploy');
-    return checkIGDeployment(clusterName);
+    return checkIGDeployment(clusterName, namespace);
   }
   return requestWithTimeout({
     cmd: 'checkIGDeployment',
-    data: { clusterName },
+    data: { clusterName, namespace },
   });
 }

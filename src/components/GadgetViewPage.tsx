@@ -1,7 +1,7 @@
 import { Icon } from '@iconify/react';
 import { GadgetWrapper } from '@inspektor-gadget/ig-desktop/frontend';
 import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import React from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import DeploymentBanner from './DeploymentBanner';
 import IGPluginProvider from './IGPluginProvider';
 
 export default function GadgetViewPage() {
+  const { t } = useTranslation();
   const { instanceID } = useParams<{ instanceID: string }>();
   const cluster = K8s.useCluster();
   const history = useHistory();
@@ -34,14 +35,18 @@ export default function GadgetViewPage() {
               flexShrink: 0,
             }}
           >
-            <Tooltip title="Back to Gadget Runner">
-              <IconButton size="small" onClick={() => history.push(`/c/${clusterName}/ig`)}>
-                <Icon icon="mdi:arrow-left" />
+            <Tooltip title={t('Back to Gadget Runner')}>
+              <IconButton
+                size="small"
+                onClick={() => history.push(`/c/${clusterName}/ig`)}
+                aria-label={t('Back to Gadget Runner')}
+              >
+                <Icon icon="mdi:arrow-left" aria-hidden="true" />
               </IconButton>
             </Tooltip>
-            <Icon icon="mdi:bug-outline" width={20} />
+            <Icon icon="mdi:bug-outline" width={20} aria-hidden="true" />
             <Typography variant="subtitle1" fontWeight={600}>
-              Gadget Instance: {instanceID}
+              {t('Gadget Instance: {{instanceID}}', { instanceID })}
             </Typography>
           </Box>
 

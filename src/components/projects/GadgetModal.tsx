@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
 import React from 'react';
 import type { GadgetAction } from './gadget-actions';
@@ -12,24 +13,29 @@ interface GadgetModalProps {
 }
 
 export default function GadgetModal({ action, row, project, onClose }: GadgetModalProps) {
+  const { t } = useTranslation();
   const podName = String(row['k8s.podName'] || '');
   const pid = String(row['pid'] || '');
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="lg">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Icon icon={action.icon} width={24} />
-        {action.label} — {podName} (PID {pid})
+        <Icon icon={action.icon} width={24} aria-hidden="true" />
+        {t('{{label}} — {{podName}} (PID {{pid}})', {
+          label: t(action.labelKey),
+          podName,
+          pid,
+        })}
         <Box sx={{ flex: 1 }} />
-        <IconButton onClick={onClose} size="small" edge="end">
-          <Icon icon="mdi:close" width={20} />
+        <IconButton onClick={onClose} size="small" edge="end" aria-label={t('Close')}>
+          <Icon icon="mdi:close" width={20} aria-hidden="true" />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', height: '70vh', p: 0 }}>
         <ProjectGadgetTab
           project={project}
           gadgetImage={action.gadgetImage}
-          gadgetLabel={action.gadgetLabel}
+          gadgetLabel={t(action.gadgetLabelKey)}
           embedded
           viewConfig={action.viewConfig}
           extraParams={action.buildParams(podName, pid)}

@@ -3,6 +3,7 @@
  * Replaces the Svelte DeployModalWrapper when there's no Go backend.
  */
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Alert,
   Box,
@@ -29,6 +30,8 @@ import {
   deployIG,
   undeployIG,
 } from '../deploy/ig-deploy';
+import { setGadgetNamespace, useGadgetNamespace } from '../utils/plugin-config';
+import { resetConnection } from '../utils/shared-connection';
 
 interface WasmDeployDialogProps {
   open: boolean;
@@ -47,7 +50,12 @@ export default function WasmDeployDialog({
   redeploy = false,
   undeploy = false,
 }: WasmDeployDialogProps) {
-  const [config, setConfig] = useState<DeployConfig>({ ...DEFAULT_CONFIG });
+  const { t } = useTranslation();
+  const configuredNamespace = useGadgetNamespace(clusterName);
+  const [config, setConfig] = useState<DeployConfig>(() => ({
+    ...DEFAULT_CONFIG,
+    namespace: configuredNamespace || DEFAULT_CONFIG.namespace,
+  }));
   const [phase, setPhase] = useState<Phase>('form');
   const [progress, setProgress] = useState<DeployProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +79,8 @@ export default function WasmDeployDialog({
     try {
       if (mode === 'undeploy') {
         await undeployIG(clusterName, config.namespace, onProgress);
+        // Intentionally keep the recorded namespace so a subsequent redeploy
+        // to the same place doesn't require the user to reconfigure it.
       } else if (mode === 'redeploy') {
         // Undeploy first, then deploy
         await undeployIG(clusterName, config.namespace, p => {
@@ -78,7 +88,7 @@ export default function WasmDeployDialog({
             ...p,
             // Scale undeploy progress to 0-50%
             progress: Math.round(p.progress / 2),
-            message: `[Undeploy] ${p.message}`,
+            message: t('[Undeploy] {{message}}', { message: p.message }),
           });
         });
         await deployIG(config, clusterName, p => {
@@ -86,11 +96,15 @@ export default function WasmDeployDialog({
             ...p,
             // Scale deploy progress to 50-100%
             progress: 50 + Math.round(p.progress / 2),
-            message: `[Deploy] ${p.message}`,
+            message: t('[Deploy] {{message}}', { message: p.message }),
           });
         });
+        setGadgetNamespace(clusterName, config.namespace);
+        resetConnection();
       } else {
         await deployIG(config, clusterName, onProgress);
+        setGadgetNamespace(clusterName, config.namespace);
+        resetConnection();
       }
     } catch (err: any) {
       if (phase !== 'error') {
@@ -98,21 +112,21 @@ export default function WasmDeployDialog({
         setPhase('error');
       }
     }
-  }, [mode, config, clusterName]);
+  }, [mode, config, clusterName, t, phase]);
 
   const title =
     mode === 'undeploy'
-      ? 'Undeploy Insights Agent'
+      ? t('Undeploy Insights Agent')
       : mode === 'redeploy'
-      ? 'Redeploy Insights Agent'
-      : 'Deploy Insights Agent';
+      ? t('Redeploy Insights Agent')
+      : t('Deploy Insights Agent');
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         {title}
         <div style={{ fontSize: '0.6em' }}>
-          The Insights agent is powered by the OSS project Inspektor Gadget
+          {t('The Insights agent is powered by the OSS project Inspektor Gadget')}
         </div>
       </DialogTitle>
       <DialogContent dividers>
@@ -124,19 +138,23 @@ export default function WasmDeployDialog({
       <DialogActions>
         {phase === 'form' && (
           <>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>{t('Cancel')}</Button>
             <Button
               variant="contained"
               color={mode === 'undeploy' ? 'error' : 'primary'}
               onClick={handleDeploy}
             >
-              {mode === 'undeploy' ? 'Undeploy' : mode === 'redeploy' ? 'Redeploy' : 'Deploy'}
+              {mode === 'undeploy'
+                ? t('Undeploy')
+                : mode === 'redeploy'
+                ? t('Redeploy')
+                : t('Deploy')}
             </Button>
           </>
         )}
         {(phase === 'done' || phase === 'error') && (
           <Button onClick={onClose} variant="contained">
-            Close
+            {t('Close')}
           </Button>
         )}
       </DialogActions>
@@ -157,14 +175,18 @@ function DeployForm({
   setConfig: (c: DeployConfig) => void;
   mode: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="body2" color="textSecondary">
-        Chart version: {CHART_VERSION} (app: {APP_VERSION})
+        {t('Chart version: {{chart}} (app: {{app}})', {
+          chart: CHART_VERSION,
+          app: APP_VERSION,
+        })}
       </Typography>
 
       <TextField
-        label="Namespace"
+        label={t('Namespace')}
         value={config.namespace}
         onChange={e => setConfig({ ...config, namespace: e.target.value })}
         size="small"
@@ -181,13 +203,13 @@ function DeployForm({
                 onChange={e => setConfig({ ...config, verifyImage: e.target.checked })}
               />
             }
-            label="Verify Image Signatures"
+            label={t('Verify Image Signatures')}
           />
 
           <Divider />
 
           <ExporterSection
-            title="OTel Log Exporters"
+            title={t('OTel Log Exporters')}
             exporters={config.otelLogExporters}
             onChange={exporters => setConfig({ ...config, otelLogExporters: exporters })}
             showMetricsFields={false}
@@ -196,7 +218,7 @@ function DeployForm({
           <Divider />
 
           <ExporterSection
-            title="OTel Metric Exporters"
+            title={t('OTel Metric Exporters')}
             exporters={config.otelMetricExporters}
             onChange={exporters => setConfig({ ...config, otelMetricExporters: exporters })}
             showMetricsFields
@@ -211,12 +233,12 @@ function DeployForm({
                 onChange={e => setConfig({ ...config, prometheusListen: e.target.checked })}
               />
             }
-            label="Prometheus Metrics Listener"
+            label={t('Prometheus Metrics Listener')}
           />
 
           {config.prometheusListen && (
             <TextField
-              label="Listen Address"
+              label={t('Listen Address')}
               value={config.prometheusListenAddress}
               onChange={e => setConfig({ ...config, prometheusListenAddress: e.target.value })}
               size="small"
@@ -245,6 +267,7 @@ function ExporterSection({
   onChange: (exporters: OtelExporter[]) => void;
   showMetricsFields: boolean;
 }) {
+  const { t } = useTranslation();
   const addExporter = () => {
     onChange([
       ...exporters,
@@ -276,14 +299,14 @@ function ExporterSection({
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <Typography variant="subtitle2">{title}</Typography>
-        <IconButton size="small" onClick={addExporter}>
-          <Icon icon="mdi:plus-circle-outline" width={20} />
+        <IconButton size="small" onClick={addExporter} aria-label={t('Add exporter')}>
+          <Icon icon="mdi:plus-circle-outline" width={20} aria-hidden="true" />
         </IconButton>
       </Box>
 
       {exporters.length === 0 && (
         <Typography variant="body2" color="textSecondary">
-          No exporters configured
+          {t('No exporters configured')}
         </Typography>
       )}
 
@@ -291,22 +314,27 @@ function ExporterSection({
         <Paper key={idx} variant="outlined" sx={{ p: 1.5, mb: 1 }}>
           <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
             <TextField
-              label="Name"
+              label={t('Name')}
               value={exp.name}
               onChange={e => updateExporter(idx, { name: e.target.value })}
               size="small"
               sx={{ flex: 1 }}
             />
             <TextField
-              label="Endpoint"
+              label={t('Endpoint')}
               value={exp.endpoint}
               onChange={e => updateExporter(idx, { endpoint: e.target.value })}
               size="small"
               sx={{ flex: 2 }}
               placeholder="localhost:4317"
             />
-            <IconButton size="small" onClick={() => removeExporter(idx)} color="error">
-              <Icon icon="mdi:delete-outline" width={20} />
+            <IconButton
+              size="small"
+              onClick={() => removeExporter(idx)}
+              color="error"
+              aria-label={t('Remove exporter')}
+            >
+              <Icon icon="mdi:delete-outline" width={20} aria-hidden="true" />
             </IconButton>
           </Box>
 
@@ -319,12 +347,12 @@ function ExporterSection({
                   onChange={e => updateExporter(idx, { insecure: e.target.checked })}
                 />
               }
-              label="Insecure"
+              label={t('Insecure')}
             />
 
             {!showMetricsFields && (
               <TextField
-                label="Compression"
+                label={t('Compression')}
                 value={exp.compression ?? ''}
                 onChange={e => updateExporter(idx, { compression: e.target.value })}
                 size="small"
@@ -336,14 +364,14 @@ function ExporterSection({
             {showMetricsFields && (
               <>
                 <TextField
-                  label="Temporality"
+                  label={t('Temporality')}
                   value={exp.temporality ?? 'cumulative'}
                   onChange={e => updateExporter(idx, { temporality: e.target.value })}
                   size="small"
                   sx={{ width: 140 }}
                 />
                 <TextField
-                  label="Interval (s)"
+                  label={t('Interval (s)')}
                   type="number"
                   value={exp.interval ?? 60}
                   onChange={e => updateExporter(idx, { interval: Number(e.target.value) })}
@@ -358,7 +386,7 @@ function ExporterSection({
                       onChange={e => updateExporter(idx, { collectGoMetrics: e.target.checked })}
                     />
                   }
-                  label="Go Metrics"
+                  label={t('Go Metrics')}
                 />
                 <FormControlLabel
                   control={
@@ -368,7 +396,7 @@ function ExporterSection({
                       onChange={e => updateExporter(idx, { collectIGMetrics: e.target.checked })}
                     />
                   }
-                  label="IG Metrics"
+                  label={t('IG Metrics')}
                 />
               </>
             )}
@@ -392,8 +420,13 @@ function ProgressView({
   error: string | null;
   phase: Phase;
 }) {
+  const { t } = useTranslation();
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 120 }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 120 }}
+      role="status"
+      aria-live="polite"
+    >
       {progress && (
         <>
           <LinearProgress
@@ -403,14 +436,19 @@ function ProgressView({
           />
           <Typography variant="body2">{progress.message}</Typography>
           <Typography variant="caption" color="textSecondary">
-            Step: {progress.step} ({progress.progress}%)
+            {t('Step: {{step}} ({{progress}}%)', {
+              step: progress.step,
+              progress: progress.progress,
+            })}
           </Typography>
         </>
       )}
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      {phase === 'done' && <Alert severity="success">Operation completed successfully.</Alert>}
+      {phase === 'done' && (
+        <Alert severity="success">{t('Operation completed successfully.')}</Alert>
+      )}
     </Box>
   );
 }

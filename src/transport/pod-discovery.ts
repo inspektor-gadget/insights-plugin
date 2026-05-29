@@ -5,10 +5,13 @@
  * port-forward WebSockets directly to avoid a race condition with the
  * `stream()` helper (whose async URL construction can cause the socket
  * to be OPEN before we can pass it to `wrapWebSocket`).
+ *
+ * The gadget namespace is configured per cluster via the plugin Settings
+ * (see `src/utils/plugin-config.ts`). Callers pass it explicitly so this
+ * module stays free of cross-module config lookups.
  */
 import { request as apiRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 
-const GADGET_NAMESPACE = 'gadget';
 const GADGET_LABEL_KEY = 'k8s-app';
 const GADGET_LABEL_VALUE = 'gadget';
 const GADGET_PORT = 8080;
@@ -19,13 +22,13 @@ export interface PortForwardHandle {
 }
 
 /**
- * Find the first running Inspektor Gadget pod in the `gadget` namespace.
+ * Find the first running Inspektor Gadget pod in `namespace`.
  */
-export async function findGadgetPod(clusterName: string): Promise<string> {
+export async function findGadgetPod(clusterName: string, namespace: string): Promise<string> {
   // Use explicit cluster path instead of useCluster=true, which relies on the
   // current route having a cluster context. Project details tabs don't have
   // a cluster in the route, so useCluster would omit the /clusters/ prefix.
-  const path = `/clusters/${clusterName}/api/v1/namespaces/${GADGET_NAMESPACE}/pods?labelSelector=${GADGET_LABEL_KEY}%3D${GADGET_LABEL_VALUE}`;
+  const path = `/clusters/${clusterName}/api/v1/namespaces/${namespace}/pods?labelSelector=${GADGET_LABEL_KEY}%3D${GADGET_LABEL_VALUE}`;
 
   const response = await apiRequest(
     path,
@@ -39,8 +42,8 @@ export async function findGadgetPod(clusterName: string): Promise<string> {
 
   if (!runningPod) {
     throw new Error(
-      `No running Inspektor Gadget pod found in namespace "${GADGET_NAMESPACE}". ` +
-        'Ensure IG is deployed on your cluster.'
+      `No running Insights Agent pod found in namespace "${namespace}". ` +
+        'Ensure IG is deployed on your cluster, or set the correct namespace in the plugin settings.'
     );
   }
 
@@ -74,9 +77,14 @@ function getWsBaseUrl(): string {
  *
  * @param podName - The gadget pod name
  * @param clusterName - The K8s cluster name (for Headlamp's proxy path)
+ * @param namespace - The namespace the gadget pod lives in
  */
-export function createPortForward(podName: string, clusterName: string): PortForwardHandle {
-  const k8sPath = `api/v1/namespaces/${GADGET_NAMESPACE}/pods/${podName}/portforward?ports=${GADGET_PORT}`;
+export function createPortForward(
+  podName: string,
+  clusterName: string,
+  namespace: string
+): PortForwardHandle {
+  const k8sPath = `api/v1/namespaces/${namespace}/pods/${podName}/portforward?ports=${GADGET_PORT}`;
   const url = `${getWsBaseUrl()}/clusters/${clusterName}/${k8sPath}`;
 
   const protocols = [

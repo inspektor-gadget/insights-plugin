@@ -1,6 +1,9 @@
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import React from 'react';
+import { useIGLanguageSync } from '../hooks/useIGLanguageSync';
 import { useIGSetup } from '../hooks/useIGSetup';
+import { useIGToastBridge } from '../hooks/useIGToastBridge';
 
 interface IGPluginProviderProps {
   clusterName: string;
@@ -18,13 +21,28 @@ interface IGPluginProviderProps {
  */
 export default function IGPluginProvider({ clusterName, children }: IGPluginProviderProps) {
   const { connected, isDark } = useIGSetup(clusterName);
+  const { t } = useTranslation();
+
+  // Mirror Headlamp's language into the embedded IG Desktop UI so its strings
+  // localize alongside the host. IG Desktop keeps its own i18next instance and
+  // bundled catalogs — only the active language is synced from the host.
+  useIGLanguageSync();
+
+  // Forward toasts emitted by the embedded IG Desktop UI into Headlamp's
+  // snackbar (IG Desktop's in-app ToastContainer is not mounted in
+  // library mode).
+  useIGToastBridge();
 
   if (!connected) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}
+        role="status"
+        aria-live="polite"
+      >
         <CircularProgress size={20} />
         <Typography variant="body2" color="textSecondary">
-          Connecting to Inspektor Gadget...
+          {t('Connecting to Insights Agent...')}
         </Typography>
       </Box>
     );

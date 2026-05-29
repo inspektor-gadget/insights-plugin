@@ -6,6 +6,7 @@ import type {
 } from '@inspektor-gadget/ig-desktop/frontend';
 import { instances } from '@inspektor-gadget/ig-desktop/frontend';
 import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Alert,
   Box,
@@ -33,6 +34,7 @@ function ParamForm({
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
 }) {
+  const { t } = useTranslation();
   // Filter to user-facing params (skip internal/hidden ones)
   const userParams = params.filter(p => {
     const tags = p.tags || [];
@@ -42,7 +44,7 @@ function ParamForm({
   if (userParams.length === 0) {
     return (
       <Typography variant="body2" color="textSecondary">
-        This gadget has no configurable parameters.
+        {t('This gadget has no configurable parameters.')}
       </Typography>
     );
   }
@@ -67,6 +69,7 @@ function ParamForm({
 
 /** List of currently running gadget instances */
 function RunningInstances({ clusterName }: { clusterName: string }) {
+  const { t } = useTranslation();
   const history = useHistory();
   const instanceList = Object.entries(instances as Record<string, GadgetInstanceData>).filter(
     ([, inst]) => inst.environment === clusterName
@@ -77,44 +80,59 @@ function RunningInstances({ clusterName }: { clusterName: string }) {
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="subtitle2" gutterBottom>
-        Running Instances
+        {t('Running Instances')}
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {instanceList.map(([id, inst]) => (
-          <Paper
-            key={id}
-            variant="outlined"
-            sx={{
-              p: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-            onClick={() => history.push(`/c/${clusterName}/ig/instance/${id}`)}
-          >
-            <Box>
-              <Typography variant="body2" fontWeight={500}>
-                {inst.name || inst.gadgetInfo?.imageName || id}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                {inst.running ? 'Running' : 'Stopped'} &middot; {inst.eventCount ?? 0} events
-              </Typography>
-            </Box>
-            <Chip
-              size="small"
-              color={inst.running ? 'success' : 'default'}
-              label={inst.running ? 'Running' : 'Stopped'}
-            />
-          </Paper>
-        ))}
+        {instanceList.map(([id, inst]) => {
+          const displayName = inst.name || inst.gadgetInfo?.imageName || id;
+          const state = inst.running ? t('Running') : t('Stopped');
+          const activate = () => history.push(`/c/${clusterName}/ig/instance/${id}`);
+          return (
+            <Paper
+              key={id}
+              variant="outlined"
+              role="button"
+              tabIndex={0}
+              aria-label={`${displayName} — ${state}`}
+              onClick={activate}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  activate();
+                }
+              }}
+              sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'action.hover' },
+                '&:focus-visible': {
+                  outline: 'none',
+                  boxShadow: theme => `0 0 0 2px ${theme.palette.primary.main}`,
+                },
+              }}
+            >
+              <Box>
+                <Typography variant="body2" fontWeight={500}>
+                  {displayName}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {state} &middot; {t('{{count}} events', { count: inst.eventCount ?? 0 })}
+                </Typography>
+              </Box>
+              <Chip size="small" color={inst.running ? 'success' : 'default'} label={state} />
+            </Paper>
+          );
+        })}
       </Box>
     </Box>
   );
 }
 
 export default function GadgetRunnerPage() {
+  const { t } = useTranslation();
   const cluster = K8s.useCluster();
   const history = useHistory();
 
@@ -190,16 +208,16 @@ export default function GadgetRunnerPage() {
       <IGPluginProvider clusterName={clusterName}>
         <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>
           <Typography variant="h5" gutterBottom>
-            Run Gadget
+            {t('Run Gadget')}
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-            Enter a gadget image URL to inspect your cluster with Inspektor Gadget.
+            {t('Enter a gadget image URL to inspect your cluster with Insights Agent.')}
           </Typography>
 
           {/* Image input */}
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
             <TextField
-              label="Gadget Image"
+              label={t('Gadget Image')}
               placeholder="ghcr.io/inspektor-gadget/gadget/trace_exec:latest"
               value={image}
               onChange={e => setImage(e.target.value)}
@@ -215,7 +233,7 @@ export default function GadgetRunnerPage() {
               disabled={!image.trim() || loading}
               sx={{ whiteSpace: 'nowrap' }}
             >
-              {loading ? <CircularProgress size={20} /> : 'Load Info'}
+              {loading ? <CircularProgress size={20} /> : t('Load Info')}
             </Button>
           </Box>
 
@@ -229,7 +247,7 @@ export default function GadgetRunnerPage() {
           {gadgetInfo && (
             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <Icon icon="mdi:bug-outline" width={20} />
+                <Icon icon="mdi:bug-outline" width={20} aria-hidden="true" />
                 <Typography variant="subtitle1" fontWeight={600}>
                   {gadgetInfo.imageName || image}
                 </Typography>
@@ -239,7 +257,7 @@ export default function GadgetRunnerPage() {
               {(gadgetInfo.datasources || gadgetInfo.dataSources) && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="caption" color="textSecondary">
-                    Datasources:{' '}
+                    {t('Datasources:')}{' '}
                     {(gadgetInfo.datasources || gadgetInfo.dataSources || [])
                       .map(ds => ds.name)
                       .join(', ')}
@@ -251,7 +269,7 @@ export default function GadgetRunnerPage() {
 
               {/* Parameters */}
               <Typography variant="subtitle2" gutterBottom>
-                Parameters
+                {t('Parameters')}
               </Typography>
               <ParamForm params={gadgetParams} values={paramValues} onChange={handleParamChange} />
 
@@ -261,9 +279,15 @@ export default function GadgetRunnerPage() {
                   color="primary"
                   onClick={runGadget}
                   disabled={running}
-                  startIcon={running ? <CircularProgress size={16} /> : <Icon icon="mdi:play" />}
+                  startIcon={
+                    running ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <Icon icon="mdi:play" aria-hidden="true" />
+                    )
+                  }
                 >
-                  {running ? 'Starting...' : 'Run Gadget'}
+                  {running ? t('Starting...') : t('Run Gadget')}
                 </Button>
               </Box>
             </Paper>

@@ -11,6 +11,7 @@
  * Implements the same ITransportAdapter interface as WebSocketAdapter,
  * so it can be used as a drop-in replacement in shared-connection.ts.
  */
+import { getGadgetNamespace } from '../utils/plugin-config';
 import { createPortForward, findGadgetPod, type PortForwardHandle } from './pod-discovery';
 import { WasmBridge } from './wasm-bridge';
 import { loadWasm } from './wasm-loader';
@@ -21,6 +22,7 @@ export class WasmTransportAdapter {
   private messageHandler: ((message: string) => void) | null = null;
   private connectionHandler: ((connected: boolean) => void) | null = null;
   private _connected = false;
+  private _gadgetNamespace: string | null = null;
   private portForwardHandle: PortForwardHandle | null = null;
   private bridge: WasmBridge | null = null;
 
@@ -32,21 +34,30 @@ export class WasmTransportAdapter {
     return this._connected;
   }
 
+  /** The namespace used for the most recent (or current) connection attempt. */
+  get gadgetNamespace(): string | null {
+    return this._gadgetNamespace;
+  }
+
   async connect(): Promise<void> {
     try {
       // Step 1: Load WASM binary (singleton — fast on subsequent calls)
       await loadWasm();
 
-      // Step 2: Find gadget pod
-      console.log(`[IG WASM] Finding gadget pod for cluster "${this.clusterName}"...`);
-      const podName = await findGadgetPod(this.clusterName);
-      console.log(`[IG WASM] Found gadget pod: ${podName}`);
+      // Step 2: Find gadget pod in the configured namespace (defaults to "gadget")
+      const namespace = getGadgetNamespace(this.clusterName);
+      this._gadgetNamespace = namespace;
+      console.log(
+        `[IG WASM] Finding gadget pod for cluster "${this.clusterName}" in namespace "${namespace}"...`
+      );
+      const podName = await findGadgetPod(this.clusterName, namespace);
+      console.log(`[IG WASM] Found gadget pod: ${namespace}/${podName}`);
 
       // Step 3: Create port-forward WebSocket (synchronous — returns socket
       // in CONNECTING state so wrapWebSocket can register its onopen handler
       // before the socket opens)
       console.log('[IG WASM] Creating port-forward...');
-      this.portForwardHandle = createPortForward(podName, this.clusterName);
+      this.portForwardHandle = createPortForward(podName, this.clusterName, namespace);
       console.log('[IG WASM] Port-forward WebSocket created');
 
       // Register onerror on the port-forward socket to detect connection death
