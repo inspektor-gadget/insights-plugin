@@ -2,10 +2,12 @@ import type { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
 
 export interface GadgetAction {
   id: string;
-  label: string;
+  /** i18n key for the menu entry label (English text used as key). */
+  labelKey: string;
   icon: string;
   gadgetImage: string;
-  gadgetLabel: string;
+  /** i18n key for the gadget label shown in toolbar / status messages. */
+  gadgetLabelKey: string;
   viewConfig: ViewConfig;
   buildParams: (podName: string, pid: string) => Record<string, string>;
 }
@@ -30,46 +32,46 @@ function buildProcessParams(podName: string, _pid: string): Record<string, strin
 export const GADGET_ACTIONS: GadgetAction[] = [
   {
     id: 'profile_cpu',
-    label: 'Profile CPU',
+    labelKey: 'Profile CPU',
     icon: 'mdi:fire',
     gadgetImage: 'ghcr.io/inspektor-gadget/gadget/profile_cpu:latest',
-    gadgetLabel: 'CPU Profile',
+    gadgetLabelKey: 'CPU Profile',
     viewConfig: { ...BASE_VIEW_CONFIG, snapshotTimeline: true },
     buildParams: buildProcessParams,
   },
   {
     id: 'trace_open',
-    label: 'Trace File Access',
+    labelKey: 'Trace File Access',
     icon: 'mdi:file-search-outline',
     gadgetImage: 'ghcr.io/inspektor-gadget/gadget/trace_open:latest',
-    gadgetLabel: 'File Access',
+    gadgetLabelKey: 'File Access',
     viewConfig: { ...BASE_VIEW_CONFIG, snapshotTimeline: false, searchBar: true },
     buildParams: buildProcessParams,
   },
   {
     id: 'trace_signal',
-    label: 'Trace Signals',
+    labelKey: 'Trace Signals',
     icon: 'mdi:bell-alert-outline',
     gadgetImage: 'ghcr.io/inspektor-gadget/gadget/trace_signal:latest',
-    gadgetLabel: 'Signals',
+    gadgetLabelKey: 'Signals',
     viewConfig: { ...BASE_VIEW_CONFIG, snapshotTimeline: false, searchBar: true },
     buildParams: buildProcessParams,
   },
   {
     id: 'trace_malloc',
-    label: 'Trace Allocations',
+    labelKey: 'Trace Allocations',
     icon: 'mdi:memory',
     gadgetImage: 'ghcr.io/inspektor-gadget/gadget/trace_malloc:latest',
-    gadgetLabel: 'Allocations',
+    gadgetLabelKey: 'Allocations',
     viewConfig: { ...BASE_VIEW_CONFIG, snapshotTimeline: false, searchBar: true },
     buildParams: buildProcessParams,
   },
   {
     id: 'trace_tcp',
-    label: 'Trace TCP Connections',
+    labelKey: 'Trace TCP Connections',
     icon: 'mdi:lan-connect',
     gadgetImage: 'ghcr.io/inspektor-gadget/gadget/trace_tcp:latest',
-    gadgetLabel: 'TCP Connections',
+    gadgetLabelKey: 'TCP Connections',
     viewConfig: { ...BASE_VIEW_CONFIG, snapshotTimeline: false },
     buildParams: buildProcessParams,
   },

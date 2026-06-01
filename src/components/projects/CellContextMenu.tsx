@@ -1,5 +1,6 @@
 import { Icon } from '@iconify/react';
 import type { CellInteractionEvent } from '@inspektor-gadget/ig-desktop/frontend';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
@@ -27,6 +28,7 @@ export default function CellContextMenu({
   onClose,
   onGadgetAction,
 }: CellContextMenuProps) {
+  const { t } = useTranslation();
   const history = useHistory();
 
   if (!event) return null;
@@ -74,9 +76,16 @@ export default function CellContextMenu({
       {resourceType && displayValue && (
         <MenuItem onClick={handleNavigate}>
           <ListItemIcon>
-            <Icon icon={RESOURCE_ICONS[resourceType] || 'mdi:open-in-new'} width={20} />
+            <Icon
+              icon={RESOURCE_ICONS[resourceType] || 'mdi:open-in-new'}
+              width={20}
+              aria-hidden="true"
+            />
           </ListItemIcon>
-          <ListItemText primary={`Go to ${resourceType}`} secondary={displayValue} />
+          <ListItemText
+            primary={t('Go to {{resourceType}}', { resourceType })}
+            secondary={displayValue}
+          />
         </MenuItem>
       )}
 
@@ -92,9 +101,9 @@ export default function CellContextMenu({
             }}
           >
             <ListItemIcon>
-              <Icon icon={action.icon} width={20} />
+              <Icon icon={action.icon} width={20} aria-hidden="true" />
             </ListItemIcon>
-            <ListItemText primary={action.label} />
+            <ListItemText primary={t(action.labelKey)} />
           </MenuItem>
         ))}
 
@@ -102,10 +111,10 @@ export default function CellContextMenu({
       {displayValue && (
         <MenuItem onClick={handleCopy}>
           <ListItemIcon>
-            <Icon icon="mdi:content-copy" width={20} />
+            <Icon icon="mdi:content-copy" width={20} aria-hidden="true" />
           </ListItemIcon>
           <ListItemText
-            primary="Copy value"
+            primary={t('Copy value')}
             secondary={displayValue.length > 40 ? displayValue.slice(0, 40) + '...' : displayValue}
           />
         </MenuItem>

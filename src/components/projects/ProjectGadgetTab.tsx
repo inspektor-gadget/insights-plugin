@@ -6,15 +6,33 @@ import type {
   IGDeploymentStatus,
   ViewConfig,
 } from '@inspektor-gadget/ig-desktop/frontend';
-import { apiService, GadgetWrapper, instances } from '@inspektor-gadget/ig-desktop/frontend';
+import { GadgetWrapper, instances } from '@inspektor-gadget/ig-desktop/frontend';
 import { SvelteWrapper } from '@inspektor-gadget/ig-desktop/frontend/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, Button, CircularProgress, Paper, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useIGLanguageSync } from '../../hooks/useIGLanguageSync';
 import { useIGSetup } from '../../hooks/useIGSetup';
+import { useIGToastBridge } from '../../hooks/useIGToastBridge';
 import { requestWithTimeout } from '../../utils/api-request';
 import DeployModal from '../DeployModal';
 
 const CONNECTION_TIMEOUT_MS = 10_000;
+
+/**
+ * Controls which snackbars a stop+remove call emits.
+ *
+ * - `silent`: never toast (currently unused — kept for parity with the
+ *   IG Desktop policy where some flows must remain quiet).
+ * - `success+error`: toast on either outcome (default for explicit user
+ *   actions like the toolbar Stop button and for the unmount/navigation
+ *   cleanup, so the user always gets feedback when a collector winds
+ *   down).
+ * - `error-only`: only toast on failure (e.g. Restart, where a success
+ *   toast would step on the immediately-following "starting" UI).
+ */
+type StopNotify = 'silent' | 'success+error' | 'error-only';
 
 interface ProjectGadgetTabProps {
   project: {
@@ -51,8 +69,16 @@ export default function ProjectGadgetTab({
   onCellContextMenu,
   extraParams,
 }: ProjectGadgetTabProps) {
+  const { t } = useTranslation();
   const clusterName = project.clusters[0] || '';
   const { connected, isDark } = useIGSetup(clusterName);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
+  // Mirror Headlamp's language into the embedded IG Desktop UI.
+  useIGLanguageSync();
+
+  // Forward IG Desktop toasts into Headlamp's snackbar.
+  useIGToastBridge();
 
   const [timedOut, setTimedOut] = useState(false);
   const [deployStatus, setDeployStatus] = useState<IGDeploymentStatus | null>(null);
@@ -67,6 +93,22 @@ export default function ProjectGadgetTab({
 
   const instanceRef = useRef<string | null>(null);
   const prevConnected = useRef(false);
+
+  // Capture enqueueSnackbar in a ref so the async unmount cleanup
+  // (which fires after the component has torn down) can still surface
+  // toasts. The notistack hook returns a stable function from the
+  // app-level <SnackbarProvider>, so storing it via ref is safe.
+  const enqueueSnackbarRef = useRef(enqueueSnackbar);
+  enqueueSnackbarRef.current = enqueueSnackbar;
+  const closeSnackbarRef = useRef(closeSnackbar);
+  closeSnackbarRef.current = closeSnackbar;
+  // gadgetLabel may be passed as a translated string; capture it too so
+  // the unmount cleanup interpolates the user-visible label even if the
+  // parent has already unmounted (and i18n strings have changed).
+  const gadgetLabelRef = useRef(gadgetLabel);
+  gadgetLabelRef.current = gadgetLabel;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   // Reset gadget lifecycle when connection drops so we re-run after reconnect
   useEffect(() => {
@@ -134,54 +176,135 @@ export default function ProjectGadgetTab({
         Object.assign(params, extraParams);
       }
 
-      const id = `project-${project.id}-${gadgetLabel
+      // Derive a stable, locale-independent slug from the gadget image name.
+      // This ensures the instance ID remains consistent regardless of UI language.
+      // Example: 'ghcr.io/inspektor-gadget/gadget/top_cuda_memory:latest' → 'top_cuda_memory'
+      const slug = (gadgetImage.split('/').pop()?.split(':')[0] ?? 'gadget')
         .toLowerCase()
-        .replace(/\s+/g, '-')}-${Date.now()}`;
-      await requestWithTimeout({
+        .replace(/[^a-z0-9_-]/g, '-');
+      const id = `project-${project.id}-${slug}-${Date.now()}`;
+      // The gRPC backend (non-WASM) requires a canonical 32-hex-char
+      // instance ID for stop/remove. When we pass a friendly string as
+      // `id`, the backend treats it as a *name* and returns its own
+      // generated ID in the response. Capture that ID — using the
+      // friendly string for `removeInstance` would fail with
+      // "invalid gadget instance id". The WASM bridge echoes the local
+      // id back as `{ id }`, so the same code path works there too.
+      const res = await requestWithTimeout({
         cmd: 'runGadget',
         data: { image: gadgetImage, clusterName, params, id },
       });
+      const instanceID = res?.id || id;
 
-      instanceRef.current = id;
-      setInstanceId(id);
+      instanceRef.current = instanceID;
+      setInstanceId(instanceID);
     } catch (err: any) {
       setError(err?.message || String(err));
     } finally {
       setStarting(false);
     }
-  }, [clusterName, gadgetImage, project.namespaces, project.id, gadgetLabel, extraParams]);
+  }, [clusterName, gadgetImage, project.namespaces, project.id, extraParams]);
 
+  /**
+   * Stop a gadget instance and clean it up from the client-side store,
+   * optionally surfacing snackbars for success and/or failure.
+   *
+   * This mirrors IG Desktop's own `closeInstance` semantics: for
+   * non-detached runs the instance lives only in IG Desktop's local
+   * `instanceManager`, not on the gadget pod, so we only need to call
+   * `stopInstance` and then drop the client-side entry. (Calling
+   * `removeInstance` against the gRPC backend with a non-canonical id
+   * fails with "invalid gadget instance id" — and would be wrong even
+   * with a canonical id, since the instance was never persisted there.)
+   *
+   * Implementation note: the function reads `enqueueSnackbar`,
+   * `gadgetLabel`, and `t` from refs so the unmount cleanup (which
+   * resolves after the component is gone) still gets the latest
+   * values without retaining a stale closure.
+   */
   const stopAndRemoveGadget = useCallback(
-    async (id: string) => {
+    async (
+      id: string,
+      options: { notify?: StopNotify; retry?: () => void } = {}
+    ): Promise<void> => {
+      const notify = options.notify ?? 'success+error';
+      const enqueue = enqueueSnackbarRef.current;
+      const tt = tRef.current;
+      const label = gadgetLabelRef.current;
+      let failed = false;
+      let failureMessage = '';
+
       try {
         await requestWithTimeout({
           cmd: 'stopInstance',
           data: { id },
         });
-      } catch {
-        // Instance may already be stopped
+      } catch (err: any) {
+        failed = true;
+        failureMessage = err?.message || String(err);
       }
-      try {
-        await requestWithTimeout({
-          cmd: 'removeInstance',
-          data: { id, clusterName },
+
+      // Drop the client-side entry only on a successful stop. If the
+      // stop call failed (e.g. transient network error), keep the local
+      // entry around so the user can retry from the snackbar action.
+      if (!failed) {
+        delete (instances as any)[id];
+      }
+
+      if (notify === 'silent') return;
+
+      if (failed) {
+        enqueue(
+          tt('Failed to stop Insights collector "{{label}}": {{error}}', {
+            label,
+            error: failureMessage,
+          }),
+          {
+            variant: 'error',
+            action: options.retry
+              ? key => (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      closeSnackbarRef.current(key);
+                      options.retry?.();
+                    }}
+                  >
+                    {tt('Retry')}
+                  </Button>
+                )
+              : undefined,
+          }
+        );
+        return;
+      }
+
+      if (notify === 'success+error') {
+        enqueue(tt('Insights collector "{{label}}" stopped successfully', { label }), {
+          variant: 'success',
         });
-      } catch {
-        // Instance may already be removed
       }
-      // Clean up client-side instances store
-      delete (instances as any)[id];
     },
-    [clusterName]
+    []
   );
 
-  const stopGadget = useCallback(async () => {
-    const id = instanceRef.current;
-    if (!id) return;
-    await stopAndRemoveGadget(id);
-    instanceRef.current = null;
-    setInstanceId(null);
-  }, [stopAndRemoveGadget]);
+  const stopGadget = useCallback(
+    async (notify: StopNotify = 'success+error') => {
+      const id = instanceRef.current;
+      if (!id) return;
+      // Capture id in the retry closure so it works even after we clear
+      // instanceRef below. Retry self-references for repeated failures
+      // and inherits the same notification policy.
+      const retry: () => void = () => {
+        stopAndRemoveGadget(id, { notify, retry });
+      };
+      await stopAndRemoveGadget(id, { notify, retry });
+      instanceRef.current = null;
+      setInstanceId(null);
+    },
+    [stopAndRemoveGadget]
+  );
 
   // Check deployment once connected
   useEffect(() => {
@@ -197,32 +320,27 @@ export default function ProjectGadgetTab({
     }
   }, [deployStatus]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally trigger only on deployStatus change, not on instanceId/starting
 
-  // Stop + remove gadget on unmount
+  // Stop + remove gadget on unmount.
+  // Same toast policy as the toolbar Stop button: success and error
+  // both surface, so the user always gets feedback when an Insights
+  // collector winds down (including card switches inside the Insights
+  // project tab).
   useEffect(() => {
     return () => {
-      if (instanceRef.current) {
-        const id = instanceRef.current;
-        (apiService as any)
-          .request({ cmd: 'stopInstance', data: { id } })
-          .catch(() => {})
-          .then(() =>
-            (apiService as any)
-              .request({ cmd: 'removeInstance', data: { id, clusterName } })
-              .catch(() => {})
-          )
-          .then(() => {
-            delete (instances as any)[id];
-          });
-      }
+      const id = instanceRef.current;
+      if (!id) return;
+      stopAndRemoveGadget(id, { notify: 'success+error' }).catch(() => {
+        // stopAndRemoveGadget already surfaces failures via snackbar.
+      });
     };
-  }, [clusterName]);
+  }, [clusterName, stopAndRemoveGadget]);
 
   // --- Render ---
 
   if (!clusterName) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="warning">This project has no clusters configured.</Alert>
+        <Alert severity="warning">{t('This project has no clusters configured.')}</Alert>
       </Box>
     );
   }
@@ -233,23 +351,27 @@ export default function ProjectGadgetTab({
       return (
         <Box sx={{ p: 3 }}>
           <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
-            <Icon icon="mdi:connection" width={48} color="#9e9e9e" />
+            <Box sx={{ color: 'text.disabled' }}>
+              <Icon icon="mdi:connection" width={48} aria-hidden="true" />
+            </Box>
             <Typography variant="h6" sx={{ mt: 1 }}>
-              Cannot Connect to Inspektor Gadget
+              {t('Cannot Connect to Insights Agent')}
             </Typography>
             <Typography variant="body2" color="textSecondary" sx={{ mt: 1, mb: 2 }}>
-              The Inspektor Gadget backend is not responding. Make sure the backend is running and
-              Inspektor Gadget is deployed on cluster <strong>{clusterName}</strong>.
+              {t(
+                'The Insights Agent backend is not responding. Make sure the backend is running and Insights Agent is deployed on cluster {{cluster}}.',
+                { cluster: clusterName }
+              )}
             </Typography>
             <Button
               variant="outlined"
-              startIcon={<Icon icon="mdi:rocket-launch" />}
+              startIcon={<Icon icon="mdi:rocket-launch" aria-hidden="true" />}
               onClick={() => {
                 setDeployModalMode('deploy');
                 setDeployOpen(true);
               }}
             >
-              Deploy Inspektor Gadget
+              {t('Deploy Insights Agent')}
             </Button>
 
             <DeployModal
@@ -268,10 +390,14 @@ export default function ProjectGadgetTab({
       );
     }
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}
+        role="status"
+        aria-live="polite"
+      >
         <CircularProgress size={20} />
         <Typography variant="body2" color="textSecondary">
-          Connecting to Inspektor Gadget...
+          {t('Connecting to Insights Agent...')}
         </Typography>
       </Box>
     );
@@ -280,10 +406,14 @@ export default function ProjectGadgetTab({
   // Checking deployment
   if (checking) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}
+        role="status"
+        aria-live="polite"
+      >
         <CircularProgress size={20} />
         <Typography variant="body2" color="textSecondary">
-          Checking Inspektor Gadget deployment...
+          {t('Checking Insights Agent deployment...')}
         </Typography>
       </Box>
     );
@@ -294,23 +424,27 @@ export default function ProjectGadgetTab({
     return (
       <Box sx={{ p: 3 }}>
         <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
-          <Icon icon="mdi:alert-circle-outline" width={48} color="#f57c00" />
+          <Box sx={{ color: 'warning.main' }}>
+            <Icon icon="mdi:alert-circle-outline" width={48} aria-hidden="true" />
+          </Box>
           <Typography variant="h6" sx={{ mt: 1 }}>
-            Inspektor Gadget Not Deployed
+            {t('Insights Agent Not Deployed')}
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1, mb: 2 }}>
-            {gadgetLabel} requires Inspektor Gadget to be deployed on cluster{' '}
-            <strong>{clusterName}</strong>.
+            {t('{{label}} requires Insights Agent to be deployed on cluster {{cluster}}.', {
+              label: gadgetLabel,
+              cluster: clusterName,
+            })}
           </Typography>
           <Button
             variant="contained"
-            startIcon={<Icon icon="mdi:rocket-launch" />}
+            startIcon={<Icon icon="mdi:rocket-launch" aria-hidden="true" />}
             onClick={() => {
               setDeployModalMode('deploy');
               setDeployOpen(true);
             }}
           >
-            Deploy Inspektor Gadget
+            {t('Deploy Insights Agent')}
           </Button>
 
           <DeployModal
@@ -336,7 +470,7 @@ export default function ProjectGadgetTab({
           severity="error"
           action={
             <Button color="inherit" size="small" onClick={runGadget}>
-              Retry
+              {t('Retry')}
             </Button>
           }
         >
@@ -349,10 +483,14 @@ export default function ProjectGadgetTab({
   // Starting gadget
   if (starting || !instanceId) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 3 }}
+        role="status"
+        aria-live="polite"
+      >
         <CircularProgress size={20} />
         <Typography variant="body2" color="textSecondary">
-          Starting {gadgetLabel.toLowerCase()} gadget...
+          {t('Starting {{label}} gadget...', { label: gadgetLabel.toLowerCase() })}
         </Typography>
       </Box>
     );
@@ -379,20 +517,26 @@ export default function ProjectGadgetTab({
           }}
         >
           <Typography variant="caption" color="textSecondary" sx={{ flex: 1 }}>
-            {gadgetLabel} &middot; {project.namespaces.join(', ') || 'all namespaces'}
+            {gadgetLabel} &middot; {project.namespaces.join(', ') || t('all namespaces')}
           </Typography>
-          <Button size="small" startIcon={<Icon icon="mdi:stop" />} onClick={stopGadget}>
-            Stop
+          <Button
+            size="small"
+            startIcon={<Icon icon="mdi:stop" aria-hidden="true" />}
+            onClick={() => stopGadget('success+error')}
+          >
+            {t('Stop')}
           </Button>
           <Button
             size="small"
-            startIcon={<Icon icon="mdi:refresh" />}
+            startIcon={<Icon icon="mdi:refresh" aria-hidden="true" />}
             onClick={async () => {
-              await stopGadget();
+              // Restart: suppress the stop success toast (a new run
+              // starts immediately) but still surface stop failures.
+              await stopGadget('error-only');
               runGadget();
             }}
           >
-            Restart
+            {t('Restart')}
           </Button>
         </Box>
       )}

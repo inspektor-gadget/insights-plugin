@@ -1,6 +1,7 @@
 import { environments } from '@inspektor-gadget/ig-desktop/frontend';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
+import { useGadgetNamespace } from '../utils/plugin-config';
 import { getSharedConnection, subscribeConnectionStatus } from '../utils/shared-connection';
 import { bridgeTheme } from '../utils/theme-bridge';
 
@@ -10,17 +11,22 @@ import { bridgeTheme } from '../utils/theme-bridge';
  * - Seeds the cluster as an IG environment
  * - Bridges MUI theme to IG CSS variables
  * - Derives isDark from the MUI theme
+ *
+ * The effect also re-runs when the cluster's configured gadget namespace
+ * changes, so editing the namespace in the plugin Settings tears down the
+ * stale connection and reconnects to the new namespace immediately.
  */
 export function useIGSetup(clusterName: string): { connected: boolean; isDark: boolean } {
   const muiTheme = useTheme();
   const [connected, setConnected] = useState(false);
+  const gadgetNamespace = useGadgetNamespace(clusterName);
 
   // Ensure the shared connection exists and subscribe to its status
   useEffect(() => {
     if (!clusterName) return;
     getSharedConnection(clusterName);
     return subscribeConnectionStatus(setConnected);
-  }, [clusterName]);
+  }, [clusterName, gadgetNamespace]);
 
   // Seed the cluster as an IG environment
   useEffect(() => {

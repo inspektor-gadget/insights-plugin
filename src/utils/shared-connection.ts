@@ -14,6 +14,7 @@
  * Includes auto-reconnect with exponential backoff.
  */
 import { apiService, initializeIG, WebSocketAdapter } from '@inspektor-gadget/ig-desktop/frontend';
+import { getGadgetNamespace } from './plugin-config';
 
 const IS_WASM = import.meta.env.VITE_TRANSPORT === 'wasm';
 
@@ -79,6 +80,7 @@ class LazyWasmAdapter implements TransportAdapter {
 
 let adapter: TransportAdapter | null = null;
 let currentCluster: string | undefined;
+let currentNamespace: string | undefined;
 let connectedState = false;
 const listeners = new Set<(connected: boolean) => void>();
 
@@ -181,23 +183,27 @@ function handleConnectionChange(connected: boolean) {
  *   gadget pod to port-forward to). Ignored in WebSocket mode.
  */
 export function getSharedConnection(clusterName?: string): TransportAdapter {
-  if (IS_WASM && adapter && clusterName && clusterName !== currentCluster) {
-    // Cluster changed in WASM mode — tear down and recreate.
-    // Clear reconnect timer first to prevent it from firing on the stale adapter.
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+  if (IS_WASM && adapter && clusterName) {
+    const desiredNamespace = getGadgetNamespace(clusterName);
+    if (clusterName !== currentCluster || desiredNamespace !== currentNamespace) {
+      // Cluster or configured namespace changed in WASM mode — tear down and recreate.
+      // Clear reconnect timer first to prevent it from firing on the stale adapter.
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      reconnectAttempt = 0;
+      adapter.disconnect();
+      adapter = null;
+      connectedState = false;
     }
-    reconnectAttempt = 0;
-    adapter.disconnect();
-    adapter = null;
-    connectedState = false;
   }
 
   if (adapter) return adapter;
 
   if (IS_WASM && clusterName) {
     currentCluster = clusterName;
+    currentNamespace = getGadgetNamespace(clusterName);
     adapter = new LazyWasmAdapter(clusterName);
   } else {
     adapter = new WebSocketAdapter(buildWsUrl());
@@ -260,6 +266,7 @@ export function resetConnection(): void {
     adapter = null;
   }
   currentCluster = undefined;
+  currentNamespace = undefined;
   if (connectedState) {
     connectedState = false;
     listeners.forEach(cb => cb(false));

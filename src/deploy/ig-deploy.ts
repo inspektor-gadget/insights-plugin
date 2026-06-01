@@ -192,7 +192,7 @@ export async function undeployIG(
     deploymentId,
     step: 'delete_resources',
     progress: 10,
-    message: 'Removing Inspektor Gadget resources...',
+    message: 'Removing Insights Agent resources...',
   });
 
   const total = manifests.length;
@@ -275,59 +275,42 @@ export async function undeployIG(
 
 /**
  * Check if Inspektor Gadget is deployed in the cluster.
- * Queries for DaemonSets/Deployments with IG labels.
+ * Queries the configured namespace for DaemonSets/Deployments with IG labels.
+ *
+ * The namespace is *not* auto-discovered: a wrong/missing setting is a
+ * stronger signal than "not deployed". Users configure the namespace per
+ * cluster in the plugin Settings, and the WASM deploy bridge auto-records
+ * the chosen namespace after a successful deploy.
  */
 export async function checkIGDeployment(
-  clusterName: string
+  clusterName: string,
+  namespace: string
 ): Promise<{ deployed: boolean; namespace?: string; version?: string; error?: string }> {
-  // Check common namespaces first
-  const namespacesToCheck = ['gadget', 'kube-system', 'ig-system', 'inspektor-gadget'];
-
-  for (const ns of namespacesToCheck) {
-    for (const selector of GADGET_LABEL_SELECTORS) {
-      try {
-        const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${ns}/daemonsets?labelSelector=${encodeURIComponent(
-          selector
-        )}`;
-        const response = await apiRequest(path, {}, true, false);
-
-        if (response?.items?.length > 0) {
-          const ds = response.items[0];
-          const version =
-            ds.metadata?.labels?.['app.kubernetes.io/version'] ||
-            extractVersionFromImage(ds.spec?.template?.spec?.containers?.[0]?.image) ||
-            'unknown';
-          return { deployed: true, namespace: ns, version };
-        }
-      } catch {
-        // Namespace may not exist — ignore
-      }
-    }
+  if (!namespace) {
+    return { deployed: false, error: 'No gadget namespace configured' };
   }
 
-  // Try all namespaces
-  try {
-    for (const selector of GADGET_LABEL_SELECTORS) {
-      const path = `/clusters/${clusterName}/apis/apps/v1/daemonsets?labelSelector=${encodeURIComponent(
+  for (const selector of GADGET_LABEL_SELECTORS) {
+    try {
+      const path = `/clusters/${clusterName}/apis/apps/v1/namespaces/${namespace}/daemonsets?labelSelector=${encodeURIComponent(
         selector
       )}`;
       const response = await apiRequest(path, {}, true, false);
 
       if (response?.items?.length > 0) {
         const ds = response.items[0];
-        const ns = ds.metadata?.namespace || 'unknown';
         const version =
           ds.metadata?.labels?.['app.kubernetes.io/version'] ||
           extractVersionFromImage(ds.spec?.template?.spec?.containers?.[0]?.image) ||
           'unknown';
-        return { deployed: true, namespace: ns, version };
+        return { deployed: true, namespace, version };
       }
+    } catch {
+      // Namespace may not exist or be forbidden — treat as "not deployed here".
     }
-  } catch (err: any) {
-    return { deployed: false, error: err?.message || String(err) };
   }
 
-  return { deployed: false };
+  return { deployed: false, namespace };
 }
 
 function extractVersionFromImage(image?: string): string | undefined {

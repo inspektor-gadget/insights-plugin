@@ -3,26 +3,32 @@
   "version": "0.2.5",
   "description": "Insights plugin for Headlamp",
   "igDesktop": {
-    "frontendLibVersion": "v0.4.0"
+    "frontendLibVersion": "v0.4.2"
   },
   "headlamp": {
     "extraDist": {
       "main.wasm.gz": "main.wasm.gz"
-    }
+      },
+    "i18n": [
+      "en",
+      "de"
+    ]
   },
   "scripts": {
     "start": "headlamp-plugin start",
     "prebuild": "node scripts/fetch-vendor-lib.mjs",
-    "build": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz",
+    "build": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz && npm run copy:locales",
     "build:go-wasm": "cd wasm && GOOS=js GOARCH=wasm go build -o ../main.wasm . && gzip -f ../main.wasm",
-    "build:wasm": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz",
+    "build:wasm": "npm run build:go-wasm && VITE_TRANSPORT=wasm vite build --config vite.config.mjs && cp main.wasm.gz dist/main.wasm.gz && npm run copy:locales",
+    "copy:locales": "rm -rf dist/locales && cp -r locales dist/locales",
     "generate-manifests": "node scripts/generate-manifests.mjs",
     "test": "headlamp-plugin test",
     "format": "headlamp-plugin format",
     "lint": "headlamp-plugin lint",
     "tsc": "headlamp-plugin tsc",
     "package": "headlamp-plugin package",
-    "vendor:update": "bash scripts/update-ig-vendor.sh"
+    "vendor:update": "bash scripts/update-ig-vendor.sh",
+    "i18n": "headlamp-plugin i18n"
   },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
   "eslintConfig": {
@@ -36,7 +42,7 @@
   },
   "dependencies": {
     "@inspektor-gadget/ig-desktop": "file:vendor/ig-desktop",
-    "svelte": "5.54.0",
+    "svelte": "5.55.8",
     "yaml": "^2.6.0"
   },
   "overrides": {

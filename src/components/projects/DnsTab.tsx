@@ -1,4 +1,5 @@
 import { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import ProjectGadgetTab from './ProjectGadgetTab';
 
@@ -20,11 +21,12 @@ interface DnsTabProps {
 }
 
 export default function DnsTab({ project }: DnsTabProps) {
+  const { t } = useTranslation();
   return (
     <ProjectGadgetTab
       project={project}
       gadgetImage={GADGET_IMAGE}
-      gadgetLabel="DNS"
+      gadgetLabel={t('DNS')}
       viewConfig={EMBEDDED_VIEW_CONFIG}
       embedded
     />

@@ -1,51 +1,115 @@
 // IG Desktop frontend styles (injected into JS by headlamp-plugin base Vite config)
 import '@inspektor-gadget/ig-desktop/frontend/dist-lib/ig-frontend.css';
 import {
-  ConfigStore,
   registerPluginSettings,
   registerProjectDetailsTab,
   registerRoute,
   registerRouteFilter,
   registerSidebarEntry,
   registerSidebarEntryFilter,
+  useTranslation,
 } from '@kinvolk/headlamp-plugin/lib';
-import { FormControlLabel, Switch } from '@mui/material';
+import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
+import { Box, FormControlLabel, Stack, Switch, TextField, Typography } from '@mui/material';
 import GadgetRunnerPage from './components/GadgetRunnerPage';
 import GadgetViewPage from './components/GadgetViewPage';
 import InsightsTab from './components/projects/InsightsTab';
+import {
+  DEFAULT_GADGET_NAMESPACE,
+  isPluginEnabled,
+  PLUGIN_NAME,
+  pluginStore,
+  setGadgetNamespace,
+  useGadgetNamespace,
+} from './utils/plugin-config';
 
-// --- Plugin settings (experimental gate) ---
+// Tab label constant — exported so InsightsTab can use it to detect clicks on this tab
+// (Headlamp's MUI Tab component doesn't expose the tab id as a DOM attribute,
+// so we match on the visible label text instead)
+export const INSIGHTS_TAB_LABEL = 'Insights (Preview)';
 
-const PLUGIN_NAME = 'insights-plugin';
-const pluginStore = new ConfigStore<{ enabled?: boolean }>(PLUGIN_NAME);
-const isEnabled = () => pluginStore.get()?.enabled ?? false;
+// --- Plugin settings ---
 
 function Settings() {
+  const { t } = useTranslation();
   const config = pluginStore.useConfig()();
   const enabled = config?.enabled ?? false;
+  const clusters = useClustersConf() || {};
+  const clusterNames = Object.keys(clusters).sort();
 
   return (
-    <FormControlLabel
-      control={
-        <Switch
-          checked={enabled}
-          onChange={() => pluginStore.update({ enabled: !enabled })}
-          color="primary"
-        />
-      }
-      label="Enable Insights plugin (Experimental)"
-    />
+    <Stack spacing={3}>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={enabled}
+            onChange={() => pluginStore.update({ enabled: !enabled })}
+            color="primary"
+          />
+        }
+        label={t('Enable Insights plugin (Experimental)')}
+      />
+
+      <Box>
+        <Typography variant="subtitle2" gutterBottom>
+          {t('Insights Agent namespace per cluster')}
+        </Typography>
+        <Typography variant="caption" color="textSecondary" component="p" sx={{ mb: 1 }}>
+          {t(
+            'Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default ("{{default}}").',
+            { default: DEFAULT_GADGET_NAMESPACE }
+          )}
+        </Typography>
+        {clusterNames.length === 0 ? (
+          <Typography variant="body2" color="textSecondary">
+            {t('No clusters configured yet.')}
+          </Typography>
+        ) : (
+          <Stack spacing={1}>
+            {clusterNames.map(name => (
+              <ClusterNamespaceRow key={name} clusterName={name} />
+            ))}
+          </Stack>
+        )}
+      </Box>
+    </Stack>
+  );
+}
+
+function ClusterNamespaceRow({ clusterName }: { clusterName: string }) {
+  const value = useGadgetNamespace(clusterName);
+  // Show an empty field when the user has not set a value, even though
+  // `useGadgetNamespace` returns the default — the placeholder makes the
+  // fallback discoverable.
+  const config = pluginStore.useConfig()();
+  const storedValue = config?.gadgetNamespaces?.[clusterName] ?? '';
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Typography variant="body2" sx={{ minWidth: 160, wordBreak: 'break-all' }}>
+        {clusterName}
+      </Typography>
+      <TextField
+        value={storedValue}
+        onChange={e => setGadgetNamespace(clusterName, e.target.value)}
+        placeholder={value || DEFAULT_GADGET_NAMESPACE}
+        size="small"
+        fullWidth
+      />
+    </Box>
   );
 }
 
 registerPluginSettings(PLUGIN_NAME, Settings);
+
+const isEnabled = () => isPluginEnabled();
 
 // --- Sidebar entry (single parent, no children = no tab bar) ---
 
 registerSidebarEntry({
   parent: null,
   name: 'inspektor-gadget',
-  label: 'Inspektor Gadget',
+  label: 'Insights Agent',
   url: '/ig',
   icon: 'mdi:bug-outline',
 });
@@ -82,7 +146,7 @@ registerRouteFilter(route =>
 
 registerProjectDetailsTab({
   id: 'ig-insights',
-  label: 'Insights (Preview)',
+  label: INSIGHTS_TAB_LABEL,
   icon: 'mdi:lightbulb-outline',
   component: ({ project }) => <InsightsTab project={project} />,
   isEnabled: async () => isEnabled(),

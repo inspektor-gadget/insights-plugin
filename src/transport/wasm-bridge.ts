@@ -14,6 +14,12 @@
  */
 import type { DeployConfig } from '../deploy/ig-deploy';
 import { checkIGDeployment, DEFAULT_CONFIG, deployIG, undeployIG } from '../deploy/ig-deploy';
+import {
+  DEFAULT_GADGET_NAMESPACE,
+  getGadgetNamespace,
+  setGadgetNamespace,
+} from '../utils/plugin-config';
+import { resetConnection } from '../utils/shared-connection';
 import type { GadgetInfo, IGConnection } from './wasm-types';
 
 /**
@@ -367,7 +373,8 @@ export class WasmBridge {
   /** Check IG deployment status via K8s API. */
   private handleCheckIGDeployment(reqID: string, data: any): void {
     const cluster = data?.clusterName || this.clusterName;
-    checkIGDeployment(cluster)
+    const namespace = data?.namespace || getGadgetNamespace(cluster);
+    checkIGDeployment(cluster, namespace)
       .then(status => this.sendResponse(reqID, status))
       .catch(err => this.sendError(reqID, err.message || String(err)));
   }
@@ -377,7 +384,7 @@ export class WasmBridge {
     const cluster = data?.clusterName || this.clusterName;
     const isUndeploy = !!data?.undeploy;
     const isRedeploy = !!data?.redeploy;
-    const namespace = data?.namespace || 'gadget';
+    const namespace = data?.namespace || DEFAULT_GADGET_NAMESPACE;
 
     const deploymentId = `wasm-${Date.now()}`;
 
@@ -432,6 +439,8 @@ export class WasmBridge {
       try {
         if (isUndeploy) {
           await undeployIG(cluster, namespace, onProgress);
+          // Intentionally keep the recorded namespace so a subsequent redeploy
+          // to the same place doesn't require the user to reconfigure it.
         } else if (isRedeploy) {
           await undeployIG(cluster, namespace, p => {
             onProgress({
@@ -447,8 +456,12 @@ export class WasmBridge {
               message: `[Deploy] ${p.message}`,
             });
           });
+          setGadgetNamespace(cluster, namespace);
+          resetConnection();
         } else {
           await deployIG(config, cluster, onProgress);
+          setGadgetNamespace(cluster, namespace);
+          resetConnection();
         }
       } catch (err: any) {
         this.emitMessage({
