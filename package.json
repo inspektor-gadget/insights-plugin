@@ -1,6 +1,6 @@
 {
   "name": "insights-plugin",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Insights plugin for Headlamp",
   "igDesktop": {
     "frontendLibVersion": "v0.4.2"
@@ -8,7 +8,7 @@
   "headlamp": {
     "extraDist": {
       "main.wasm.gz": "main.wasm.gz"
-      },
+    },
     "i18n": [
       "en",
       "de"
