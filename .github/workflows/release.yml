@@ -51,6 +51,7 @@ jobs:
           cp package.json ${{ env.PLUGIN_NAME }}/
           cp dist/main.js ${{ env.PLUGIN_NAME }}/
           cp dist/main.wasm.gz ${{ env.PLUGIN_NAME }}/
+          cp -r locales ${{ env.PLUGIN_NAME }}/
           tar -czf ${{ env.PLUGIN_NAME }}-${{ inputs.version }}.tar.gz ${{ env.PLUGIN_NAME }}/
           rm -rf ${{ env.PLUGIN_NAME }}
 
@@ -98,6 +99,7 @@ jobs:
           cp package.json ${{ env.PLUGIN_NAME }}/
           cp dist/main.js ${{ env.PLUGIN_NAME }}/
           cp dist/main.wasm.gz ${{ env.PLUGIN_NAME }}/
+          cp -r locales ${{ env.PLUGIN_NAME }}/
           docker build -f Dockerfile.ci -t ghcr.io/${{ github.repository }}:v${{ inputs.version }} .
           docker push ghcr.io/${{ github.repository }}:v${{ inputs.version }}
           rm -rf ${{ env.PLUGIN_NAME }}
