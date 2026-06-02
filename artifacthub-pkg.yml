@@ -1,7 +1,7 @@
-version: "0.2.6"
+version: "0.2.7"
 name: insights-plugin
 displayName: "Insights Plugin"
-createdAt: "2026-06-01T04:10:50Z"
+createdAt: "2026-06-02T14:39:47Z"
 description: Insights plugin for Headlamp - eBPF-powered observability for Kubernetes by Inspektor Gadget
 homeURL: "https://github.com/inspektor-gadget/insights-plugin"
 logoURL: "https://raw.githubusercontent.com/inspektor-gadget/inspektor-gadget/main/docs/images/ig_logo.svg"
@@ -9,7 +9,7 @@ license: Apache-2.0
 provider:
   name: inspektor-gadget
 annotations:
-  headlamp/plugin/archive-url: "https://github.com/inspektor-gadget/insights-plugin/releases/download/v0.2.6/insights-plugin-0.2.6.tar.gz"
-  headlamp/plugin/archive-checksum: "SHA256:b8ea36c24abc95c52154a850149c32a463553b24cea28864e405b5df88135c3f"
+  headlamp/plugin/archive-url: "https://github.com/inspektor-gadget/insights-plugin/releases/download/v0.2.7/insights-plugin-0.2.7.tar.gz"
+  headlamp/plugin/archive-checksum: "SHA256:b85dc6b745eb8f811aec79d8a4fc85f5718c8cd9865bff1ab08df80cee5f5a0f"
   headlamp/plugin/version-compat: ">=0.22"
   headlamp/plugin/distro-compat: "in-cluster,web,docker-desktop,desktop"
