@@ -71,6 +71,18 @@ function replaceNamespace(yaml: string, namespace: string): string {
 }
 
 /**
+ * Replace hostPID
+ */
+function replaceHostPID(yaml: string, hostPID: boolean): string {
+  if (hostPID === false) return yaml;
+
+  // Replace hostPID field values
+  const result = yaml.replace(/(\bhostPID:\s*)false\b/g, `$1${hostPID}`);
+
+  return result;
+}
+
+/**
  * Build the operator config section for the ConfigMap's config.yaml.
  */
 function buildOperatorConfig(config: DeployConfig): string {
@@ -176,6 +188,12 @@ export function customizeManifests(config: DeployConfig): ManifestEntry[] {
 
     // Apply namespace substitution
     yaml = replaceNamespace(yaml, config.namespace);
+
+    // Hardcode hostPID to true in order to get symbolization:
+    // https://github.com/inspektor-gadget/inspektor-gadget/blob/e0a57c1ecb49/docs/devel/otel-ebpf-profiler-architecture.md?plain=1#L350-L355
+    // TODO We may want to add this option to DeployConfig and
+    // WasmDeployDialog.tsx.
+    yaml = replaceHostPID(yaml, true);
 
     // Customize ConfigMap
     if (m.kind === 'ConfigMap' && m.name === 'gadget') {
