@@ -10,8 +10,25 @@
       "main.wasm.gz": "main.wasm.gz"
     },
     "i18n": [
+      "cs",
+      "de",
       "en",
-      "de"
+      "es",
+      "fr",
+      "hu",
+      "id",
+      "it",
+      "ja",
+      "ko",
+      "nl",
+      "pl",
+      "pt-BR",
+      "pt-PT",
+      "ru",
+      "sv",
+      "tr",
+      "zh-Hans",
+      "zh-Hant"
     ]
   },
   "scripts": {
