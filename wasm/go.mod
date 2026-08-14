@@ -6,7 +6,7 @@ require (
 	github.com/inspektor-gadget/inspektor-gadget v0.54.1
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
 	google.golang.org/grpc v1.82.1
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
