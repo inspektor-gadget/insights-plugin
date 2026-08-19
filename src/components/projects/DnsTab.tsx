@@ -22,12 +22,17 @@ interface DnsTabProps {
 
 export default function DnsTab({ project }: DnsTabProps) {
   const { t } = useTranslation();
+  const nsFilter = project.namespaces[0] ? `k8s.namespace==${project.namespaces[0]}` : '';
   return (
     <ProjectGadgetTab
       project={project}
       gadgetImage={GADGET_IMAGE}
       gadgetLabel={t('DNS')}
       viewConfig={EMBEDDED_VIEW_CONFIG}
+      extraParams={{
+        'operator.oci.annotate': 'dns:views.defaults.mode=dns-network',
+        ...(nsFilter && { 'operator.filter.filter': nsFilter }),
+      }}
       embedded
     />
   );

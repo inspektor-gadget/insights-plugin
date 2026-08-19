@@ -27,8 +27,6 @@ const K8S_FIELD_ANNOTATIONS: Record<string, Record<string, string>> = {
 interface RegisterOptions {
   /** If set, only this datasource name is shown; others get view.hidden. */
   showOnlyDatasource?: string;
-  /** Fields to hide from the table column list (by fullName). */
-  hiddenFields?: string[];
 }
 
 /**
@@ -50,13 +48,7 @@ export function registerK8sAnnotations(options?: RegisterOptions): () => void {
 
     // eslint-disable-next-line no-unused-vars
     field: (field: GadgetDatasourceField, _ds: GadgetDatasource) => {
-      const annotations: Record<string, string> = {
-        ...(K8S_FIELD_ANNOTATIONS[field.fullName] ?? {}),
-      };
-      if (options?.hiddenFields?.includes(field.fullName)) {
-        annotations['columns.hidden'] = 'true';
-      }
-      return annotations;
+      return K8S_FIELD_ANNOTATIONS[field.fullName] ?? {};
     },
   });
 }
