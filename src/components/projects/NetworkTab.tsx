@@ -22,12 +22,14 @@ interface NetworkTabProps {
 
 export default function NetworkTab({ project }: NetworkTabProps) {
   const { t } = useTranslation();
+  const nsFilter = project.namespaces[0] ? `k8s.namespace==${project.namespaces[0]}` : '';
   return (
     <ProjectGadgetTab
       project={project}
       gadgetImage={GADGET_IMAGE}
       gadgetLabel={t('Network')}
       viewConfig={EMBEDDED_VIEW_CONFIG}
+      extraParams={nsFilter ? { 'operator.filter.filter': nsFilter } : undefined}
       embedded
     />
   );
