@@ -103,7 +103,6 @@
   "Allocations": "内存分配",
   "TCP Connections": "TCP 连接",
 
-  "Enable Insights plugin (Experimental)": "启用 Insights 插件（实验性功能）",
   "Insights Agent namespace per cluster": "各集群的 Insights Agent 命名空间",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "覆盖各集群中部署 Insights Agent 所使用的 Kubernetes 命名空间。留空以使用默认值（“{{default}}”）。",
 

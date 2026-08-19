@@ -106,7 +106,6 @@
   "Allocations": "Alokace",
   "TCP Connections": "TCP spojení",
 
-  "Enable Insights plugin (Experimental)": "Povolit plugin Insights (experimentální)",
   "Insights Agent namespace per cluster": "Jmenný prostor Insights Agent pro jednotlivé clustery",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Přepište jmenný prostor Kubernetes, ve kterém je pro jednotlivé clustery nasazen Insights Agent. Ponechte prázdné pro použití výchozí hodnoty („{{default}}“).",
 

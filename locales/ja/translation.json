@@ -103,7 +103,6 @@
   "Allocations": "メモリ割り当て",
   "TCP Connections": "TCP 接続",
 
-  "Enable Insights plugin (Experimental)": "Insights プラグインを有効にする (実験的機能)",
   "Insights Agent namespace per cluster": "クラスタごとの Insights Agent 名前空間",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "各クラスタで Insights Agent をデプロイする Kubernetes 名前空間を上書きします。既定値「{{default}}」を使用する場合は空欄のままにしてください。",
 

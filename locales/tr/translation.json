@@ -104,7 +104,6 @@
   "Allocations": "Ayırmalar",
   "TCP Connections": "TCP bağlantıları",
 
-  "Enable Insights plugin (Experimental)": "Insights eklentisini etkinleştir (deneysel)",
   "Insights Agent namespace per cluster": "Küme başına Insights Agent namespace'i",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Insights Agent'in her küme için dağıtıldığı Kubernetes namespace'ini geçersiz kılın. Varsayılanı (\"{{default}}\") kullanmak için boş bırakın.",
 

@@ -105,7 +105,6 @@
   "Allocations": "Allocazioni",
   "TCP Connections": "Connessioni TCP",
 
-  "Enable Insights plugin (Experimental)": "Abilita il plugin Insights (sperimentale)",
   "Insights Agent namespace per cluster": "Namespace di Insights Agent per cluster",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Sostituisci il namespace Kubernetes in cui Insights Agent viene distribuito per ciascun cluster. Lascia vuoto per utilizzare il valore predefinito (\"{{default}}\").",
 

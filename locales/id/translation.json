@@ -103,7 +103,6 @@
   "Allocations": "Alokasi",
   "TCP Connections": "Koneksi TCP",
 
-  "Enable Insights plugin (Experimental)": "Aktifkan plugin Insights (eksperimental)",
   "Insights Agent namespace per cluster": "Namespace Insights Agent per cluster",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Timpa namespace Kubernetes tempat Insights Agent di-deploy untuk setiap cluster. Biarkan kosong untuk menggunakan default (\"{{default}}\").",
 

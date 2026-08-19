@@ -104,7 +104,6 @@
   "Allocations": "Memóriafoglalások",
   "TCP Connections": "TCP-kapcsolatok",
 
-  "Enable Insights plugin (Experimental)": "Insights-bővítmény engedélyezése (kísérleti)",
   "Insights Agent namespace per cluster": "Insights Agent namespace fürtönként",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Írja felül azt a Kubernetes namespace-t, amelyben az Insights Agent az egyes fürtökön üzembe van helyezve. Hagyja üresen az alapértelmezett érték (\"{{default}}\") használatához.",
 

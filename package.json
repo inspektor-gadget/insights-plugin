@@ -6,6 +6,7 @@
     "frontendLibVersion": "v0.4.7"
   },
   "headlamp": {
+    "enabledByDefault": false,
     "extraDist": {
       "main.wasm.gz": "main.wasm.gz"
     },
