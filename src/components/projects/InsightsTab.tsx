@@ -44,14 +44,14 @@ const CARDS: { view: View; icon: string; titleKey: string; descriptionKey: strin
   {
     view: 'top-cuda-memory',
     icon: 'mdi:expansion-card-variant',
-    titleKey: 'Top CUDA Memory',
+    titleKey: 'GPU Memory Allocations',
     descriptionKey:
       'Track CUDA memory allocations and frees per process, by library and memory class.',
   },
   {
     view: 'profile-cuda',
     icon: 'mdi:fire',
-    titleKey: 'Profile CUDA',
+    titleKey: 'Profile GPU Memory',
     descriptionKey: 'Profile CUDA memory allocations as a flamegraph across the project.',
   },
 ];

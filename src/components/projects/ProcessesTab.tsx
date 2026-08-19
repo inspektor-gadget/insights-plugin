@@ -1,10 +1,9 @@
 import type { CellInteractionEvent } from '@inspektor-gadget/ig-desktop/frontend';
 import type { ViewConfig } from '@inspektor-gadget/ig-desktop/frontend';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { resourceRoute } from '../../utils/headlamp-routes';
-import { registerK8sAnnotations } from '../../utils/k8s-annotations';
 import CellContextMenu from './CellContextMenu';
 import { GADGET_ACTIONS, type GadgetAction } from './gadget-actions';
 import GadgetModal from './GadgetModal';
@@ -16,9 +15,24 @@ const EMBEDDED_VIEW_CONFIG: ViewConfig = {
   statusBar: false,
   inspector: false,
   logPanel: false,
-  datasourceTabs: false,
+  datasourceTabs: true,
   searchBar: true,
   snapshotTimeline: false,
+};
+
+const DEFAULT_HIDDEN_FIELDS = [
+  'memoryVirtual',
+  'memoryShared',
+  'memoryRelative',
+  'cpuUsage',
+  'threadCount',
+];
+
+const FIELD_DESCRIPTIONS = {
+  memoryRSS:
+    'Resident Set Size (RSS) in bytes: physical memory occupied by the process and currently held in RAM.',
+  cpuUsageRelative:
+    'CPU usage as a percentage, normalized by the number of CPUs available to the process.',
 };
 
 interface ProcessesTabProps {
@@ -39,12 +53,6 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
     action: GadgetAction;
     row: Record<string, unknown>;
   } | null>(null);
-
-  // Register k8s annotation providers
-  useEffect(() => {
-    const unregister = registerK8sAnnotations({ hiddenFields: ['k8s.namespace'] });
-    return unregister;
-  }, []);
 
   // Stable refs for callbacks (SvelteWrapper captures props at mount time)
   const handleCellClickRef = useRef<(e: CellInteractionEvent) => void>(() => {});
@@ -92,6 +100,8 @@ export default function ProcessesTab({ project }: ProcessesTabProps) {
         onCellClick={stableCellClick}
         onCellContextMenu={stableCellContextMenu}
         extraParams={nsFilter ? { 'operator.filter.filter': nsFilter } : undefined}
+        defaultHiddenFields={DEFAULT_HIDDEN_FIELDS}
+        fieldDescriptions={FIELD_DESCRIPTIONS}
       />
       <CellContextMenu
         event={contextMenuEvent}

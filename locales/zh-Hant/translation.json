@@ -59,8 +59,8 @@
   "Processes": "處理程序",
   "Trace TCP": "追蹤 TCP",
   "Trace DNS": "追蹤 DNS",
-  "Top CUDA Memory": "Top CUDA 記憶體",
-  "Profile CUDA": "對 CUDA 進行效能分析",
+  "GPU Memory Allocations": "GPU Memory Allocations",
+  "Profile GPU Memory": "Profile GPU Memory",
   "Network": "網路",
   "DNS": "DNS",
   "CUDA Memory": "CUDA 記憶體",
@@ -103,7 +103,6 @@
   "Allocations": "記憶體配置",
   "TCP Connections": "TCP 連線",
 
-  "Enable Insights plugin (Experimental)": "啟用 Insights 外掛程式（實驗性功能）",
   "Insights Agent namespace per cluster": "各叢集的 Insights Agent 命名空間",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "覆寫各叢集中部署 Insights Agent 所使用的 Kubernetes 命名空間。留空以使用預設值（「{{default}}」）。",
 

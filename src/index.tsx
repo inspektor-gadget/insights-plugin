@@ -4,19 +4,16 @@ import {
   registerPluginSettings,
   registerProjectDetailsTab,
   registerRoute,
-  registerRouteFilter,
   registerSidebarEntry,
-  registerSidebarEntryFilter,
   useTranslation,
 } from '@kinvolk/headlamp-plugin/lib';
 import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
-import { Box, FormControlLabel, Stack, Switch, TextField, Typography } from '@mui/material';
+import { Box, Stack, TextField, Typography } from '@mui/material';
 import GadgetRunnerPage from './components/GadgetRunnerPage';
 import GadgetViewPage from './components/GadgetViewPage';
 import InsightsTab from './components/projects/InsightsTab';
 import {
   DEFAULT_GADGET_NAMESPACE,
-  isPluginEnabled,
   PLUGIN_NAME,
   pluginStore,
   setGadgetNamespace,
@@ -32,24 +29,11 @@ export const INSIGHTS_TAB_LABEL = 'Insights (Preview)';
 
 function Settings() {
   const { t } = useTranslation();
-  const config = pluginStore.useConfig()();
-  const enabled = config?.enabled ?? false;
   const clusters = useClustersConf() || {};
   const clusterNames = Object.keys(clusters).sort();
 
   return (
     <Stack spacing={3}>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={enabled}
-            onChange={() => pluginStore.update({ enabled: !enabled })}
-            color="primary"
-          />
-        }
-        label={t('Enable Insights plugin (Experimental)')}
-      />
-
       <Box>
         <Typography variant="subtitle2" gutterBottom>
           {t('Insights Agent namespace per cluster')}
@@ -102,8 +86,6 @@ function ClusterNamespaceRow({ clusterName }: { clusterName: string }) {
 
 registerPluginSettings(PLUGIN_NAME, Settings);
 
-const isEnabled = () => isPluginEnabled();
-
 // --- Sidebar entry (single parent, no children = no tab bar) ---
 
 registerSidebarEntry({
@@ -113,10 +95,6 @@ registerSidebarEntry({
   url: '/ig',
   icon: 'mdi:bug-outline',
 });
-
-registerSidebarEntryFilter(entry =>
-  entry.name === 'inspektor-gadget' && !isEnabled() ? null : entry
-);
 
 // --- Routes ---
 
@@ -138,10 +116,6 @@ registerRoute({
   isFullWidth: true,
 });
 
-registerRouteFilter(route =>
-  (route.name === 'ig-runner' || route.name === 'ig-gadget-view') && !isEnabled() ? null : route
-);
-
 // --- Project Details Tabs ---
 
 registerProjectDetailsTab({
@@ -149,5 +123,4 @@ registerProjectDetailsTab({
   label: INSIGHTS_TAB_LABEL,
   icon: 'mdi:lightbulb-outline',
   component: ({ project }) => <InsightsTab project={project} />,
-  isEnabled: async () => isEnabled(),
 });

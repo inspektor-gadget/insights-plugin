@@ -59,8 +59,8 @@
   "Processes": "프로세스",
   "Trace TCP": "TCP 추적",
   "Trace DNS": "DNS 추적",
-  "Top CUDA Memory": "Top CUDA 메모리",
-  "Profile CUDA": "CUDA 프로파일링",
+  "GPU Memory Allocations": "GPU Memory Allocations",
+  "Profile GPU Memory": "Profile GPU Memory",
   "Network": "네트워크",
   "DNS": "DNS",
   "CUDA Memory": "CUDA 메모리",
@@ -103,7 +103,6 @@
   "Allocations": "메모리 할당",
   "TCP Connections": "TCP 연결",
 
-  "Enable Insights plugin (Experimental)": "Insights 플러그인 활성화 (실험적 기능)",
   "Insights Agent namespace per cluster": "클러스터별 Insights Agent 네임스페이스",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "각 클러스터에서 Insights Agent가 배포되는 Kubernetes 네임스페이스를 재정의합니다. 기본값(\"{{default}}\")을 사용하려면 비워 두세요.",
 

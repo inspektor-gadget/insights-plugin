@@ -2,7 +2,6 @@
  * Persistent plugin-level configuration backed by Headlamp's `ConfigStore`.
  *
  * Holds:
- * - `enabled`: experimental on/off toggle (rendered in the Settings page).
  * - `gadgetNamespaces`: per-cluster map of the namespace where Inspektor
  *   Gadget is deployed. When unset for a cluster, callers should fall back
  *   to `DEFAULT_GADGET_NAMESPACE` ("gadget"). The value is updated:
@@ -25,8 +24,6 @@ export const PLUGIN_NAME = 'insights-plugin';
 export const DEFAULT_GADGET_NAMESPACE = 'gadget';
 
 export interface PluginConfig {
-  /** Experimental feature gate for the whole plugin. */
-  enabled?: boolean;
   /** Per-cluster gadget namespace overrides (clusterName → namespace). */
   gadgetNamespaces?: Record<string, string>;
 }
@@ -36,11 +33,6 @@ export const pluginStore = new ConfigStore<PluginConfig>(PLUGIN_NAME);
 /** Returns the current plugin configuration (never null). */
 function readConfig(): PluginConfig {
   return pluginStore.get() ?? {};
-}
-
-/** Whether the plugin is enabled (experimental gate). */
-export function isPluginEnabled(): boolean {
-  return readConfig().enabled ?? false;
 }
 
 /** Returns the configured gadget namespace for `clusterName`, falling back to "gadget". */

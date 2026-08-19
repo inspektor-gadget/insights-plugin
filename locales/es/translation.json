@@ -61,8 +61,8 @@
   "Processes": "Procesos",
   "Trace TCP": "Rastrear TCP",
   "Trace DNS": "Rastrear DNS",
-  "Top CUDA Memory": "Top de memoria CUDA",
-  "Profile CUDA": "Perfilar CUDA",
+  "GPU Memory Allocations": "GPU Memory Allocations",
+  "Profile GPU Memory": "Profile GPU Memory",
   "Network": "Red",
   "DNS": "DNS",
   "CUDA Memory": "Memoria CUDA",
@@ -105,7 +105,6 @@
   "Allocations": "Asignaciones",
   "TCP Connections": "Conexiones TCP",
 
-  "Enable Insights plugin (Experimental)": "Habilitar el plugin de Insights (experimental)",
   "Insights Agent namespace per cluster": "Espacio de nombres de Insights Agent por clúster",
   "Override the Kubernetes namespace where Insights Agent is deployed for each cluster. Leave empty to use the default (\"{{default}}\").": "Sustituya el espacio de nombres de Kubernetes en el que se implementa Insights Agent para cada clúster. Déjelo vacío para usar el valor predeterminado (\"{{default}}\").",
 

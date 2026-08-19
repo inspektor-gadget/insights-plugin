@@ -16,6 +16,8 @@ import { useIGLanguageSync } from '../../hooks/useIGLanguageSync';
 import { useIGSetup } from '../../hooks/useIGSetup';
 import { useIGToastBridge } from '../../hooks/useIGToastBridge';
 import { requestWithTimeout } from '../../utils/api-request';
+import { applyInstanceColumnDefaults } from '../../utils/gadget-columns';
+import { registerK8sAnnotations } from '../../utils/k8s-annotations';
 import DeployModal from '../DeployModal';
 
 const CONNECTION_TIMEOUT_MS = 10_000;
@@ -52,6 +54,10 @@ interface ProjectGadgetTabProps {
   onCellContextMenu?: CellContextMenuHandler;
   /** Additional params to pass when running the gadget */
   extraParams?: Record<string, string>;
+  /** Additional fields hidden by default but available from the column menu */
+  defaultHiddenFields?: string[];
+  /** Tooltip text keyed by field name */
+  fieldDescriptions?: Record<string, string>;
 }
 
 /**
@@ -68,6 +74,8 @@ export default function ProjectGadgetTab({
   onCellClick,
   onCellContextMenu,
   extraParams,
+  defaultHiddenFields,
+  fieldDescriptions,
 }: ProjectGadgetTabProps) {
   const { t } = useTranslation();
   const clusterName = project.clusters[0] || '';
@@ -79,6 +87,8 @@ export default function ProjectGadgetTab({
 
   // Forward IG Desktop toasts into Headlamp's snackbar.
   useIGToastBridge();
+
+  useEffect(() => registerK8sAnnotations(), []);
 
   const [timedOut, setTimedOut] = useState(false);
   const [deployStatus, setDeployStatus] = useState<IGDeploymentStatus | null>(null);
@@ -195,6 +205,10 @@ export default function ProjectGadgetTab({
         data: { image: gadgetImage, clusterName, params, id },
       });
       const instanceID = res?.id || id;
+      await applyInstanceColumnDefaults(instances as any, instanceID, {
+        hiddenFields: defaultHiddenFields,
+        descriptions: fieldDescriptions,
+      });
 
       instanceRef.current = instanceID;
       setInstanceId(instanceID);
@@ -203,7 +217,15 @@ export default function ProjectGadgetTab({
     } finally {
       setStarting(false);
     }
-  }, [clusterName, gadgetImage, project.namespaces, project.id, extraParams]);
+  }, [
+    clusterName,
+    gadgetImage,
+    project.namespaces,
+    project.id,
+    extraParams,
+    defaultHiddenFields,
+    fieldDescriptions,
+  ]);
 
   /**
    * Stop a gadget instance and clean it up from the client-side store,

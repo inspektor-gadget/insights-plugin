@@ -90,7 +90,7 @@ function resolveIGFrontend() {
 
       // Match: new URL(/* @vite-ignore */ "/assets/<name>.worker-<hash>.js", import.meta.url)
       // The @vite-ignore comment is optional.
-      const workerUrlRe = /new\s+URL\(\s*(?:\/\*[^]*?\*\/\s*)?"([^"]*\.worker[^"]*)"\s*,\s*import\.meta\.url\s*\)/g;
+      const workerUrlRe = /new\s+URL\(\s*(?:\/\*[^]*?\*\/\s*)?"([^"]*\.worker[^"]*)"\s*,\s*(?:""\s*\+\s*)?import\.meta\.url\s*\)/g;
 
       transformed = transformed.replace(workerUrlRe, (match, workerPath) => {
         // workerPath is e.g. "/assets/filter.worker-CtZqczPL.js"
@@ -103,10 +103,13 @@ function resolveIGFrontend() {
           const escaped = workerCode.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
           return `URL.createObjectURL(new Blob([\`${escaped}\`],{type:"text/javascript"}))`;
         } catch {
-          console.warn(`[resolve-ig-frontend] Worker file not found: ${workerFile}, disabling worker`);
-          return `"data:text/javascript,"`;
+          this.error(`[resolve-ig-frontend] Worker file not found: ${workerFile}`);
         }
       });
+
+      if (code.includes('/assets/filter.worker') && transformed === code) {
+        this.error('[resolve-ig-frontend] Failed to inline the filter worker');
+      }
 
       if (transformed !== code) {
         return { code: transformed, map: null };
