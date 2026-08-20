@@ -42,19 +42,13 @@
     "generate-manifests": "node scripts/generate-manifests.mjs",
     "test": "headlamp-plugin test",
     "format": "headlamp-plugin format",
-    "lint": "headlamp-plugin lint",
+    "lint": "eslint --cache --no-eslintrc -c .eslintrc.cjs --max-warnings 0 --ext .js,.ts,.tsx src/",
     "tsc": "headlamp-plugin tsc",
     "package": "headlamp-plugin package",
     "vendor:update": "bash scripts/update-ig-vendor.sh",
     "i18n": "headlamp-plugin i18n"
   },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
-  "eslintConfig": {
-    "extends": [
-      "@headlamp-k8s",
-      "prettier"
-    ]
-  },
   "devDependencies": {
     "@kinvolk/headlamp-plugin": "^0.14.0"
   },
