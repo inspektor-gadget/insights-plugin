@@ -16,7 +16,8 @@ vi.mock('@inspektor-gadget/ig-desktop/frontend', () => ({
 describe('registerK8sAnnotations', () => {
   it('makes Kubernetes resource fields clickable', () => {
     registerK8sAnnotations();
-    const provider = mocks.registerAnnotationProvider.mock.calls.at(-1)![0];
+    const calls = mocks.registerAnnotationProvider.mock.calls;
+    const provider = calls[calls.length - 1][0];
 
     expect(provider.field({ fullName: 'k8s.namespace' }, {})).toEqual({
       'interaction.clickable': 'true',

@@ -42,28 +42,25 @@
     "generate-manifests": "node scripts/generate-manifests.mjs",
     "test": "headlamp-plugin test",
     "format": "headlamp-plugin format",
-    "lint": "headlamp-plugin lint",
+    "lint": "eslint --cache --no-eslintrc -c .eslintrc.cjs --max-warnings 0 --ext .js,.ts,.tsx src/",
     "tsc": "headlamp-plugin tsc",
     "package": "headlamp-plugin package",
     "vendor:update": "bash scripts/update-ig-vendor.sh",
     "i18n": "headlamp-plugin i18n"
   },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
-  "eslintConfig": {
-    "extends": [
-      "@headlamp-k8s",
-      "prettier"
-    ]
-  },
   "devDependencies": {
-    "@kinvolk/headlamp-plugin": "^0.13.0"
+    "@kinvolk/headlamp-plugin": "^0.14.0"
   },
   "dependencies": {
     "@inspektor-gadget/ig-desktop": "file:vendor/ig-desktop",
     "svelte": "5.56.8",
-    "yaml": "^2.6.0"
+    "yaml": "^2.9.0"
   },
   "overrides": {
-    "typescript": "5.6.2"
+    "@vitest/coverage-istanbul": "4.1.10",
+    "dompurify": "3.4.13",
+    "typescript": "5.6.2",
+    "vitest": "4.1.10"
   }
 }
