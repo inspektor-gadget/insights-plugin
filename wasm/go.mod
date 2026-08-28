@@ -3,7 +3,7 @@ module github.com/inspektor-gadget/ig-wasm
 go 1.26.0
 
 require (
-	github.com/inspektor-gadget/inspektor-gadget v0.55.0
+	github.com/inspektor-gadget/inspektor-gadget v0.55.1
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.12
