@@ -4,7 +4,6 @@ import {
   registerPluginSettings,
   registerProjectDetailsTab,
   registerRoute,
-  registerSidebarEntry,
   useTranslation,
 } from '@kinvolk/headlamp-plugin/lib';
 import { useClustersConf } from '@kinvolk/headlamp-plugin/lib/k8s';
@@ -85,16 +84,6 @@ function ClusterNamespaceRow({ clusterName }: { clusterName: string }) {
 }
 
 registerPluginSettings(PLUGIN_NAME, Settings);
-
-// --- Sidebar entry (single parent, no children = no tab bar) ---
-
-registerSidebarEntry({
-  parent: null,
-  name: 'inspektor-gadget',
-  label: 'Insights Agent',
-  url: '/ig',
-  icon: 'mdi:bug-outline',
-});
 
 // --- Routes ---
 
