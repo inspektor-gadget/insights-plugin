@@ -26,6 +26,14 @@ interface TransportAdapter {
   onConnectionChange(handler: (connected: boolean) => void): void;
   disconnect(): void;
   readonly connected: boolean;
+  /**
+   * Optional active health probe. Only the WASM adapter implements this
+   * (see WasmTransportAdapter.checkHealth) — it performs a real round trip
+   * per pod to detect a "zombie" port-forward socket that never fires
+   * `onerror`/`onclose`. When absent, startPing() falls back to the
+   * synthetic 'helo' request/timeout race.
+   */
+  checkHealth?(): Promise<boolean>;
 }
 
 /**
@@ -76,6 +84,16 @@ class LazyWasmAdapter implements TransportAdapter {
     this.inner?.disconnect();
     this.inner = null;
   }
+
+  /**
+   * Returns true when there's no inner adapter yet (nothing to fail a
+   * health check on — avoids tripping a spurious reconnect before the
+   * first `connect()` has ever run) or delegates to it otherwise.
+   */
+  async checkHealth(): Promise<boolean> {
+    if (!this.inner) return true;
+    return (await this.inner.checkHealth?.()) ?? true;
+  }
 }
 
 let adapter: TransportAdapter | null = null;
@@ -97,15 +115,34 @@ function startPing() {
   stopPing();
   pingTimer = setInterval(() => {
     if (!adapter || !connectedState) return;
+
+    if (adapter.checkHealth) {
+      // WASM transport: perform a real per-pod round trip instead of the
+      // WASM bridge's synthetic 'helo' reply, which can never detect a
+      // zombie port-forward socket (see WasmTransportAdapter.checkHealth).
+      // checkHealth() itself prunes dead pods and, if every pod turns out
+      // dead, tears the adapter down and fires onConnectionChange(false)
+      // (which schedules a reconnect) — so there's nothing extra to do here
+      // beyond surfacing unexpected errors.
+      adapter.checkHealth().catch(err => {
+        console.warn('[IG] Health check failed:', err);
+      });
+      return;
+    }
+
     const pingReq = (apiService as any).request({ cmd: 'helo' });
     const timeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('ping timeout')), PING_TIMEOUT_MS)
     );
     Promise.race([pingReq, timeout]).catch(() => {
       console.warn('[IG] Ping timeout — forcing reconnect');
+      // Note: don't null out `adapter` here — handleConnectionChange(false)
+      // already calls scheduleReconnect(), which needs a live `adapter`
+      // reference to call adapter.connect() on when its timer fires. Nulling
+      // it here would permanently break reconnection (the timer would find
+      // adapter === null and silently do nothing).
       handleConnectionChange(false);
       adapter?.disconnect();
-      adapter = null;
     });
   }, PING_INTERVAL_MS);
 }
