@@ -4,6 +4,12 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "esModuleInterop": true,
-    "module": "esnext"
+    "module": "esnext",
+    // Base config's `lib` derives from its `target: "es2017"`, which excludes
+    // Promise.allSettled (ES2020). This only affects type declarations, not
+    // emitted JS or the `target` output — the plugin's runtime (Electron/
+    // evergreen browsers) already supports it, and the code already relies on
+    // ES2020+ APIs like optional chaining (`?.`).
+    "lib": ["es2020", "dom", "dom.iterable"]
   }
 }

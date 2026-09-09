@@ -21,10 +21,22 @@ export interface PortForwardHandle {
   socket: WebSocket;
 }
 
+/** A discovered Inspektor Gadget pod: the DaemonSet instance running on `nodeName`. */
+export interface GadgetPod {
+  name: string;
+  nodeName: string;
+}
+
 /**
- * Find the first running Inspektor Gadget pod in `namespace`.
+ * List all running Inspektor Gadget pods in `namespace`.
+ *
+ * IG is deployed as a DaemonSet (one pod per node), and each pod's gadget
+ * service only runs gadgets against its own node — there is no server-side
+ * fan-out/aggregation across nodes. Callers that want cluster-wide data
+ * must connect to every pod returned here and merge the resulting streams
+ * themselves (see MultiIGConnection).
  */
-export async function findGadgetPod(clusterName: string, namespace: string): Promise<string> {
+export async function findGadgetPods(clusterName: string, namespace: string): Promise<GadgetPod[]> {
   // Use explicit cluster path instead of useCluster=true, which relies on the
   // current route having a cluster context. Project details tabs don't have
   // a cluster in the route, so useCluster would omit the /clusters/ prefix.
@@ -38,16 +50,21 @@ export async function findGadgetPod(clusterName: string, namespace: string): Pro
   );
 
   const pods = response?.items || [];
-  const runningPod = pods.find((pod: any) => pod.status?.phase === 'Running');
+  const runningPods: GadgetPod[] = pods
+    .filter((pod: any) => pod.status?.phase === 'Running')
+    .map((pod: any) => ({
+      name: pod.metadata.name,
+      nodeName: pod.spec?.nodeName || pod.metadata.name,
+    }));
 
-  if (!runningPod) {
+  if (runningPods.length === 0) {
     throw new Error(
       `No running Insights Agent pod found in namespace "${namespace}". ` +
         'Ensure IG is deployed on your cluster, or set the correct namespace in the plugin settings.'
     );
   }
 
-  return runningPod.metadata.name;
+  return runningPods;
 }
 
 /**
